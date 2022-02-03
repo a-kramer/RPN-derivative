@@ -70,3 +70,21 @@ void symbol_print(struct symbol *s){
 		break;
 	}
 }
+
+int is_double(struct symbol *s, double y){
+	int z=0; /* false */
+	double v;
+	if(s && s->type==symbol_number){
+		v=s->value - y;
+	  z=((v<0?-v:v) < 1e-15);
+	}
+	return z;
+}
+
+int is_equal(struct symbol *a, struct symbol *b){
+	int E=(a==b);
+	if (a && b){
+		E=(memcmp(a,b,sizeof(struct symbol))==0);
+	}
+	return E;
+}

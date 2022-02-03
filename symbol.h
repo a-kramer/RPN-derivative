@@ -20,4 +20,6 @@ struct symbol {
 
 struct symbol* symbol_alloc(char *s);
 void symbol_print(struct symbol *s);
+int is_double(struct symbol *s, double y);
+int is_equal(struct symbol *a, struct symbol *b);
 #endif

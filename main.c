@@ -7,14 +7,14 @@
 #include "ll.h"
 
 #define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
-
+#define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
 struct ll* derivative(struct ll *pn, const char x);
 void rpn_print(struct ll *rpn);
 
 void help(char *name){
 	assert(name);
 	printf("[%s]\tUsage: %s 'x' < rpn.txt\n",__func__,name);
-	printf("\t%s will attempt to calculate the symbolic derivative\n\tof rpn with respect to the symbolic variable 'x'",name);
+	printf("\t%s will attempt to calculate the symbolic derivative\n\tof rpn with respect to the symbolic variable 'x'\n",name);
 	printf("\texample: $ echo 'x y *' | %s x\n",name);
 	printf("\t         y\n");	
 }
@@ -100,10 +100,6 @@ struct ll* function_derivative(enum func f, struct ll *a, char x){
 	return res;
 }
 
-void rpn_simplify(struct ll *r){
-
-
-}
 
 struct ll* basic_op_derivative(const char op, struct ll *a, struct ll *b, const char x){
 	struct ll *res=NULL;
