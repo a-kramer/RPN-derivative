@@ -18,6 +18,7 @@ struct symbol {
 	int nargs;
 };
 
+struct symbol* symbol_allocd(double d);
 struct symbol* symbol_alloc(char *s);
 void symbol_print(struct symbol *s);
 int is_double(struct symbol *s, double y);

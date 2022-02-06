@@ -22,6 +22,16 @@ static enum func match_func(const char *s){
 	return t;
 }
 
+struct symbol* symbol_allocd(double d){
+	struct symbol *n=malloc(sizeof(struct symbol));
+	assert(n);
+	n->type=symbol_number;
+  n->value=d;
+	n->nargs=0;
+	return n;
+}
+
+
 struct symbol* symbol_alloc(char *s){
 	assert(s);
 	struct symbol *n=malloc(sizeof(struct symbol));

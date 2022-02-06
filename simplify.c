@@ -8,8 +8,11 @@
 
 #define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
 #define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
-struct ll* derivative(struct ll *pn, const char x);
+
 void rpn_print(struct ll *rpn);
+struct ll* simplify(struct ll *stack);
+
+
 
 void help(char *name){
 	assert(name);
@@ -18,6 +21,8 @@ void help(char *name){
 	printf("\texample: $ echo 'x 0 *' | %s\n",name);
 	printf("\t         0\n");	
 }
+
+
 
 /* calculate the number of terms 
  * necessary to evaluate the first
@@ -38,14 +43,6 @@ int depth(struct ll *pn){
 	return d;
 }
 
-void rpn_free(struct ll *rpn){
-	struct symbol *s;
-	while (rpn){
-		s=ll_pop(&rpn);
-		free(s);
-	}
-}
-
 void rpn_print(struct ll *rpn){
 	struct symbol *s;
 	while (rpn){
@@ -55,129 +52,152 @@ void rpn_print(struct ll *rpn){
 	}
 }
 
-struct ll* function_simplify(struct symbol *a, struct symbol *func)
+struct ll* function_simplify(struct ll *a, struct symbol *func)
 {
+	//size_t sym_size=sizeof(struct symbol);
+	int a0=(depth(a)==0 && is_double(a->value,0.0));
+	int a1=(depth(a)==0 && is_double(a->value,1.0));
+	
 	struct ll* res=NULL;
 	assert(func->type==symbol_function);
 	switch (func->f){
 	case f_exp:
-		if(is_double(a,0.0)){
-			free(a);
+		if(a0){
+			ll_free(&a);
 			free(func);
-			ll_append(&res,symbol_alloc("1"));
+			ll_append(&res,symbol_allocd(1.0));
 		}
 		break;
 	case f_log:
-		if (is_double(a,1.0)){
-			free(a);
+		if (a1){
+			ll_free(&a);
 			free(func);
-			ll_append(&res,symbol_alloc("0.0"));
+			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
   case f_sin:
-		if(is_double(a,0.0)){
-			free(a);
+		if(a0){
+			ll_free(&a);
 			free(func);
-			ll_append(&res,symbol_alloc("0"));
+			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
   case f_cos:
-		if(is_double(a,0.0)){
-			free(a);
+		if(a0){
+			ll_free(&a);
 			free(func);
-			ll_append(&res,symbol_alloc("1"));
+			ll_append(&res,symbol_allocd(1.0));
 		}
 		break;
 	}
 	if (!res) {
-		ll_append(&res,a);
+		ll_append(&res,simplify(a));
 		ll_append(&res,func);
 	}
 	return res;
 }
 
-struct ll* basic_op_simplify(struct symbol *a, struct symbol *b, struct symbol *op){
+struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
+{
 	struct ll* res=NULL;
+	size_t sym_size=sizeof(struct symbol);
+	int da=depth(a);
+	int db=depth(b);
+	int a0=(da==0 && is_double(a->value,0.0));
+	int a1=(da==0 && is_double(a->value,1.0));
+	int b0=(db==0 && is_double(b->value,0.0));
+	int b1=(db==0 && is_double(b->value,1.0));
+	
 	assert(op->type==symbol_operator);
+
 	switch(op->name){
   case '+':
-		if (is_double(a,0.0)){
-			free(a);
-			free(op);
-			ll_append(&res,b);
-		} else if (is_double(b,0.0)){
-			free(b);
-			free(op);
-			ll_append(&res,a);
+		if (a0){
+			ll_free(&a);
+			ll_cat(&res,simplify(b));
+		} else if (b0){
+			ll_free(&b);
+			ll_cat(&res,simplify(a));
 		}
 		break;
 	case '-':
-		if (is_double(b,0.0)){
-			ll_append(&res,a);
-			free(b);
-			free(op);
-		} else if (is_double(a,0.0)){
-			free(a);
-			free(op);
-			(b->value)*=-1.0;
-			ll_append(&res,b);
-		} else if (is_equal(a,b)){
-			free(a);
-			free(b);
-			free(op);
-			ll_append(&res,symbol_alloc("0"));
+		if (b0){
+			ll_free(&b);
+			ll_cat(&res,simplify(a));
+		} else if (ll_are_equal(a,b,sym_size)){
+			ll_free(&a);
+			ll_free(&b);
+			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
 	case '*':
-		if (is_double(a,0.0) || is_double(b,0.0)){
-			free(a);
-			free(b);
-			free(op);
-			ll_append(&res,symbol_alloc("0"));
+		if (a0 || b0){
+			ll_free(&a);
+			ll_free(&b);
+			ll_append(&res,symbol_allocd(0.0));
+		} else if (a1){
+			ll_free(&a);
+			ll_cat(&res,simplify(b));
+		} else if (b1){
+			ll_free(&b);
+			ll_cat(&res,simplify(a));
 		}
 		break;
   case '/':
-		if (is_equal(a,b)){
-			free(a);
-			free(b);
-			free(op);
-			ll_append(&res,symbol_alloc("1"));
-		} else if (is_double(a,0.0) && !is_double(b,0.0)){
-			free(a);
-			free(b);
-			free(op);
-			ll_append(&res,symbol_alloc("0"));
+		if (ll_are_equal(a,b,sym_size)){
+			ll_free(&a);
+			ll_free(&b);
+			ll_append(&res,symbol_allocd(1.0));
+		} else if (a0 && !b0){
+			ll_free(&a);
+			ll_free(&b);
+			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
 	}
 	if(!res) {
- 		ll_append(&res,a);
- 		ll_append(&res,b);
+ 		ll_cat(&res,simplify(a));
+ 		ll_cat(&res,simplify(b));
  		ll_append(&res,op);
 	}
 	return res;
 }
 
-struct ll* simplify(struct ll *r){
-	struct symbol *s,*a,*b;
-	struct ll *stack;
+struct ll* simplify(struct ll *stack){
+	struct symbol *s;
+	int i,d;
+	struct ll *p,*a,*b;
 	struct ll *res=NULL;
-	while (r){
-		s=ll_pop(&r);
+	if (stack){
+		s=ll_pop(&stack);
 	  switch(s->type){
 		case symbol_number:
-			ll_push(&stack,s);
+			ll_append(&res,s);
 			break;
 		case symbol_var:
-			ll_push(&stack,s);
+			ll_append(&res,s);
 			break;
 		case symbol_operator:
-			b=ll_pop(&stack);
-			a=ll_pop(&stack);
+			p=stack;
+			b=p;
+			d=depth(b);
+			for (i=0;i<d;i++){
+				assert(p->next);
+				p=p->next;
+			}
+			a=p->next;
+			p->next=NULL;
 			ll_cat(&res,basic_op_simplify(a,b,s));
       break;
 		case symbol_function:
-			a=ll_pop(&stack);
+			a=stack;
+			d=depth(a);
+			p=a;
+			for (i=0;i<d;i++){
+				assert(p->next);
+				p=p->next;
+			}
+			p->next=NULL;			
 			ll_cat(&res,function_simplify(a,s));
 			break;
 		}
@@ -185,35 +205,38 @@ struct ll* simplify(struct ll *r){
 	return res;
 }
 
-/* open stdin and perform a derivative wrt to argv[1] */
+/* open stdin to read an expression in reverse polish notation to simplify it using very simple rules */
 int main(int argc, char* argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
 	char *p, *s;
 	ssize_t m=0;
-	char *x;
+	int i,N=1;		
 	const char delim[]=" ";
 	struct ll *r=NULL;
 	struct ll *res=NULL;
-	if (argc==1){
-		do{
-			m=getline(&rpn,&n,stdin);
-			if (m && !feof(stdin)){
-				s=strchr(rpn,'\n');
-				if (s) s[0]='\0';
-				p=strtok(rpn,delim);
-				while (p){
-					ll_append(&r,symbol_alloc(p));
-					p=strtok(NULL,delim);
-				}
-				if (r) res=simplify(r);
-				rpn_print(res);
-				putchar('\n');
-				rpn_free(res);
-			}
-		} while (!feof(stdin));
-	} else {
-		help(argv[0]);
+	if (argc==2){
+		N=strtol(argv[1],NULL,10);
 	}
+	do{
+		m=getline(&rpn,&n,stdin);
+		if (m && !feof(stdin)){
+			s=strchr(rpn,'\n');
+			if (s) s[0]='\0';
+			p=strtok(rpn,delim);
+			while (p){
+				ll_push(&r,symbol_alloc(p));
+				p=strtok(NULL,delim);
+			}
+			if (r){
+				for (i=0; i<N; i++, r=ll_reverse(res)){
+					res=simplify(r);
+				}
+			}
+			rpn_print(res);
+			putchar('\n');
+			ll_free(&res);
+		}
+	} while (!feof(stdin));
 	return EXIT_SUCCESS;
 }

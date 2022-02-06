@@ -8,6 +8,7 @@
 
 #define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
 #define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
+
 struct ll* derivative(struct ll *pn, const char x);
 void rpn_print(struct ll *rpn);
 
@@ -215,7 +216,7 @@ int main(int argc, char* argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
 	char *p, *s;
-	ssize_t m=0;
+	size_t m=0;
 	char *x;
 
 	const char delim[]=" ";
