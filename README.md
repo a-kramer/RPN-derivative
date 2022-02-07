@@ -15,7 +15,7 @@ produces:
 ```
 x a b + * a b + a b + * /
 ```
-which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so `x`). This is almost right, and technically correct.
+which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so `x/(a+b)`). This is almost right, and technically correct.
 
 simplify doesn't know math, it only tries some simple pattern recognition.
 
