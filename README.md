@@ -34,6 +34,17 @@ which is `x*(y+2) + x*y`, which looks OK.
 
 Many. Very few symbols and functions are and will ever be supported.
 
+There are no checks to see if the input is a valid RPN expression.
+
+There are some unchecked assumptions about the purpose of the RPN
+expression (e.g. it doesn't leave a full stack of numbers without
+operations).
+
+All variables must be one letter, anything that is longer than one letter is currently considered a standard mathematical function (like `exp` or `sin`).
+
+This will never become a scripting language like `dc`, with registers
+and user defined macros.
+
 ## Plans
 
 I want to add conversion between infix and rpn notation as well as
@@ -42,10 +53,12 @@ automatic conversion from rpn strings to C code. Then, it will be possible to do
 $ # planned:
 $ echo "x*y" | infix_to_rpn | derivative x | simplify 3 | rpn_to_c 
 ```
+
+maybe like this
 ```
 double derivative(double x, double y)
 {
  return y;
 }
 ```
-Or something like this.
+Or something similar. But specifically, this project aims to automatically calculate the Jacobian of a vector valued function used as right hand side in ordinary differential equations.
