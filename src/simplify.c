@@ -12,8 +12,6 @@
 void rpn_print(struct ll *rpn);
 struct ll* simplify(struct ll *stack);
 
-
-
 void help(char *name){
 	assert(name);
 	printf("[%s]\tUsage: %s < rpn.txt\n",__func__,name);
@@ -91,7 +89,7 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 		break;
 	}
 	if (!res) {
-		ll_append(&res,simplify(a));
+		ll_cat(&res,simplify(a));
 		ll_append(&res,func);
 	}
 	return res;
@@ -109,7 +107,6 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	int b1=(db==0 && is_double(b->value,1.0));
 	
 	assert(op->type==symbol_operator);
-
 	switch(op->name){
   case '+':
 		if (a0){
@@ -171,12 +168,6 @@ struct ll* simplify(struct ll *stack){
 	if (stack){
 		s=ll_pop(&stack);
 	  switch(s->type){
-		case symbol_number:
-			ll_append(&res,s);
-			break;
-		case symbol_var:
-			ll_append(&res,s);
-			break;
 		case symbol_operator:
 			p=stack;
 			b=p;
@@ -186,6 +177,14 @@ struct ll* simplify(struct ll *stack){
 				p=p->next;
 			}
 			a=p->next;
+			p->next=NULL;
+			d=depth(a);
+			p=a;
+			for (i=0;i<d;i++){
+				assert(p->next);
+				p=p->next;
+			}
+			stack=p->next;
 			p->next=NULL;
 			ll_cat(&res,basic_op_simplify(a,b,s));
       break;
@@ -197,10 +196,14 @@ struct ll* simplify(struct ll *stack){
 				assert(p->next);
 				p=p->next;
 			}
+			stack=p->next;
 			p->next=NULL;			
 			ll_cat(&res,function_simplify(a,s));
 			break;
+		default:
+			ll_append(&res,s);
 		}
+		ll_cat(&res,simplify(stack));	
 	}
 	return res;
 }
@@ -211,7 +214,7 @@ int main(int argc, char* argv[]){
 	char *rpn=malloc(n);
 	char *p, *s;
 	ssize_t m=0;
-	int i,N=1;		
+	int i,N=1;
 	const char delim[]=" ";
 	struct ll *r=NULL;
 	struct ll *res=NULL;
@@ -220,23 +223,28 @@ int main(int argc, char* argv[]){
 	}
 	do{
 		m=getline(&rpn,&n,stdin);
-		if (m && !feof(stdin)){
+		//printf("[%s] line: %s (%li characters)\n",__func__,rpn,m);
+		if (m>0 && !feof(stdin)){
 			s=strchr(rpn,'\n');
 			if (s) s[0]='\0';
 			p=strtok(rpn,delim);
+			/* init */
+			r=NULL; 
+			res=NULL;
 			while (p){
 				ll_push(&r,symbol_alloc(p));
 				p=strtok(NULL,delim);
 			}
 			if (r){
-				for (i=0; i<N; i++, r=ll_reverse(res)){
+				for (i=0; i<N; i++){
 					res=simplify(r);
+					if (i<N-1) r=ll_reverse(res);
 				}
 			}
 			rpn_print(res);
-			putchar('\n');
+			printf("\n");
 			ll_free(&res);
 		}
 	} while (!feof(stdin));
 	return EXIT_SUCCESS;
-}
+}	

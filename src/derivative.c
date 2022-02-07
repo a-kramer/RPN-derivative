@@ -205,7 +205,7 @@ struct ll* derivative(struct ll *pn, const char x){
 			}
 			b=p->next;
 			p->next=NULL;
-			ll_cat(&res,function_derivative(s->type,a,x));
+			ll_cat(&res,function_derivative(s->f,a,x));
 		}
 	}
 	return res;
@@ -227,10 +227,12 @@ int main(int argc, char* argv[]){
 		assert(isalpha(x[0]));
 		do{
 			m=getline(&rpn,&n,stdin);
-			if (m && !feof(stdin)){
+			//fprintf(stderr,"[%s] line: %s (%li characters)\n",__func__,rpn,m);
+			if (m>0 && !feof(stdin)){
 				s=strchr(rpn,'\n');
 				if (s) s[0]='\0';
 				p=strtok(rpn,delim);
+				pn=NULL;
 				while (p){
 					ll_push(&pn,symbol_alloc(p));
 					p=strtok(NULL,delim);

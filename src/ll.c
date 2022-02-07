@@ -1,15 +1,19 @@
 #include "ll.h"
 #include <assert.h>
 
-void ll_append(struct ll **L, void *e){
-	struct ll **a=L;
+void ll_append(struct ll **a, void *e){
+	struct ll *c=*a;
 	struct ll *n=malloc(sizeof(struct ll));
 	n->next=NULL;
 	n->value=e;
-	while (*a){
-		a=&((*a)->next);
+	if (c) {
+		while (c->next){
+			c=c->next;
+		}
+		c->next=n;
+	} else {
+		*a=n;
 	}
-	*a=n;
 }
 
 void* ll_remove(struct ll **L){
@@ -45,11 +49,16 @@ void* ll_pop(struct ll **L){
 }
 
 void ll_cat(struct ll **a, struct ll *b){
-	struct ll **c=a;
-	while (*c){
-		c=&((*c)->next);
+	assert(a);
+	struct ll *c=*a;
+	if (c){
+		while (c->next){
+			c=c->next;
+		}
+		c->next=b;
+	} else {
+		*a=b;
 	}
-	*c=b;
 }
 
 struct ll* ll_reverse(struct ll *a){
@@ -68,6 +77,7 @@ void ll_free(struct ll **a){
 	while(*a){
 		t=*a;
 		*a=(*a)->next;
+		free(t->value);
 		free(t);
 	}
 }
@@ -81,4 +91,13 @@ int ll_are_equal(struct ll *a, struct ll *b,  size_t value_size)
 		b=b->next;
 	}
 	return (E && a==b);
+}
+
+int ll_length(struct ll *a){
+	int k=0;
+	while (a){
+		k++;
+		a=a->next;
+	}
+	return k;
 }

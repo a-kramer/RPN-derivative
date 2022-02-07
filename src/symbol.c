@@ -2,24 +2,17 @@
 #include <string.h>
 #include <stdio.h>
 
-const char *fname[]={"exp","log","sin","cos"};
+const char *fname[]={"exp","log","sin","cos","NA"};
 
 static enum func match_func(const char *s){
 	assert(s);
-	enum func t;
-	if (strcmp(s,"exp")==0){
-    t=f_exp;
-	} else if (strcmp(s,"log")==0){
-		t=f_log;
-	} else if (strcmp(s,"sin")==0){
-		t=f_sin;
-	} else if (strcmp(s,"cos")==0){
-		t=f_cos;
-	} else {
-		fprintf(stderr,"[%s] «%s» is currently not handled right.\n",__func__,s);
-		abort();
+	int i;
+	int n=sizeof(fname)/sizeof(char*);
+	for (i=0;i<n;i++){
+		if (strcmp(s,fname[i])==0) break;
 	}
-	return t;
+	//printf("[%s] function: %i (%s)\n",__func__,i,fname[i]);
+	return i;
 }
 
 struct symbol* symbol_allocd(double d){
