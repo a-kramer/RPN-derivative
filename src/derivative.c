@@ -20,9 +20,8 @@ void help(char *name){
 	printf("\t         y\n");	
 }
 
-/* calculate the number of terms 
- * necessary to evaluate the first
- * symbol.
+/* calculate the number of terms necessary to evaluate the first
+ * symbol. if the list ends prematurely, a negative depth is returned.
  */
 int depth(struct ll *pn){
 	int n=0;
@@ -30,7 +29,8 @@ int depth(struct ll *pn){
 	if (pn){
 		n=NARGS(pn);
 		while (n){
-			pn=pn->next;
+			if (pn) pn=pn->next;
+			else return -1;
 			n--;
 			d++;
 			n+=NARGS(pn);			
@@ -92,9 +92,36 @@ struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 	case f_exp:
 		a_rev=rpn_reverse_copy(a);
 		ll_cat(&res,a_rev);
-		ll_append(&res,symbol_alloc("exp"));
+		ll_append(&res,fun);
 		ll_cat(&res,derivative(a,x));
 		ll_append(&res,symbol_alloc("*"));
+		break;
+	case f_log:
+		a_rev=rpn_reverse_copy(a);
+		ll_append(&res,symbol_allocd(1.0));
+		ll_cat(&res,a_rev);
+		ll_append(&res,symbol_alloc("/"));
+		ll_cat(&res,derivative(a,x));
+		ll_append(&res,symbol_alloc("*"));
+		free(fun);
+		break;
+	case f_sin:
+		a_rev=rpn_reverse_copy(a);
+		ll_cat(&res,a_rev);
+		ll_append(&res,symbol_alloc("cos"));
+		ll_cat(&res,derivative(a,x));
+		ll_append(&res,symbol_alloc("*"));
+		free(fun);
+		break;
+	case f_cos:
+		a_rev=rpn_reverse_copy(a);
+		ll_cat(&res,a_rev);
+		ll_append(&res,symbol_alloc("sin"));
+		ll_append(&res,symbol_allocd(-1.0));
+		ll_append(&res,symbol_alloc("*"));		
+		ll_cat(&res,derivative(a,x));
+		ll_append(&res,symbol_alloc("*"));
+		free(fun);
 		break;
 	default:
 		printf("unhandled case");
@@ -208,6 +235,13 @@ struct ll* derivative(struct ll *pn, const char x){
 	return res;
 }
 
+int balanced(struct ll *pn)
+{
+	int d=depth(pn);
+	int l=ll_length(pn);
+  return (d==l-1);
+}
+
 /* open stdin and perform a derivative wrt to argv[1] */
 int main(int argc, char* argv[]){
 	size_t n=20;
@@ -234,7 +268,7 @@ int main(int argc, char* argv[]){
 					ll_push(&pn,symbol_alloc(p));
 					p=strtok(NULL,delim);
 				}
-				if (pn) res=derivative(pn,x[0]);
+				if (pn && balanced(pn)) res=derivative(pn,x[0]);
 				rpn_print(res);
 				putchar('\n');
 				rpn_free(res);

@@ -22,9 +22,8 @@ void help(char *name){
 
 
 
-/* calculate the number of terms 
- * necessary to evaluate the first
- * symbol.
+/* calculate the number of terms necessary to evaluate the first
+ * symbol. if the list ends prematurely, a negative depth is returned.
  */
 int depth(struct ll *pn){
 	int n=0;
@@ -32,7 +31,8 @@ int depth(struct ll *pn){
 	if (pn){
 		n=NARGS(pn);
 		while (n){
-			pn=pn->next;
+			if (pn) pn=pn->next;
+			else return -1;
 			n--;
 			d++;
 			n+=NARGS(pn);			
@@ -40,6 +40,7 @@ int depth(struct ll *pn){
 	}
 	return d;
 }
+
 
 void rpn_print(struct ll *rpn){
 	struct symbol *s;
@@ -210,6 +211,14 @@ struct ll* simplify(struct ll *stack){
 	return res;
 }
 
+int balanced(struct ll *pn)
+{
+	int d=depth(pn);
+	int l=ll_length(pn);
+  return (d==l-1);
+}
+
+
 /* open stdin to read an expression in reverse polish notation to simplify it using very simple rules */
 int main(int argc, char* argv[]){
 	size_t n=20;
@@ -237,7 +246,7 @@ int main(int argc, char* argv[]){
 				ll_push(&r,symbol_alloc(p));
 				p=strtok(NULL,delim);
 			}
-			if (r){
+			if (r && balanced(r)){
 				for (i=0; i<N; i++){
 					res=simplify(r);
 					if (i<N-1) r=ll_reverse(res);

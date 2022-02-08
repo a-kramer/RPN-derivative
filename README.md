@@ -4,6 +4,9 @@ With this code, I try to calculate the symbolic derivative, say
 `d(y*x)/dx = y`, with as simple means as possible, without using
 external libraries.
 
+The input expression must be balanced: `x y z +` has an unused operand, `x +` lacks an operand.
+
+
 ## Usage
 
 To calculate the derivative of `x*y/(a+b)` with respect to `y`:
