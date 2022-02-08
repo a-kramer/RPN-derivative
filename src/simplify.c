@@ -73,14 +73,14 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
-  case f_sin:
+	case f_sin:
 		if(a0){
 			ll_free(&a);
 			free(func);
 			ll_append(&res,symbol_allocd(0.0));
 		}
 		break;
-  case f_cos:
+	case f_cos:
 		if(a0){
 			ll_free(&a);
 			free(func);
@@ -169,7 +169,7 @@ struct ll* simplify(struct ll *stack){
 	struct ll *res=NULL;
 	if (stack){
 		s=ll_pop(&stack);
-	  switch(s->type){
+		switch(s->type){
 		case symbol_operator:
 			p=stack;
 			b=p;
