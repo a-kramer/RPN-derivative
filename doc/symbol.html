@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en-US">
-<!-- SECTION: Linked Lists -->
+<!-- SECTION: Symbols in Math Expressions -->
 <head>
 <title>RPN Derivative</title>
-<meta name="keywords" content="Linked Lists">
+<meta name="keywords" content="Symbols in Math Expressions">
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Andrei Kramer-Miehe &lt;andrei.kramer@scilifelab.se&gt;">
@@ -185,93 +185,84 @@ h2.title, h3.title {
 <h2 class="title">Contents</h2>
 <ul class="contents">
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
-<li><a href="#ll_append">ll_append</a></li>
-<li><a href="#ll_free">ll_free</a></li>
-<li><a href="#ll_length">ll_length</a></li>
-<li><a href="#ll_pop">ll_pop</a></li>
-<li><a href="#ll_remove">ll_remove</a></li>
-<li><a href="#ll_reverse">ll_reverse</a></li>
+<li><a href="#is_double">is_double</a></li>
+<li><a href="#is_equal">is_equal</a></li>
+<li><a href="#symbol_alloc">symbol_alloc</a></li>
+<li><a href="#symbol_allocd">symbol_allocd</a></li>
+<li><a href="#symbol_print">symbol_print</a></li>
 </ul></li>
 </ul>
 </div>
 <div class="body">
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
-<h3 class="function"><a id="ll_append">ll_append</a></h3>
-<p class="description">appends an element <code>e</code> to the end of linked list <code>a</code> This will
-allocate some more heap memory for the list.  On exit, *a will be
-pointing to what it was before, or the new element, if the list was
-initially empty.</p>
+<h3 class="function"><a id="is_double">is_double</a></h3>
+<p class="description">This function checks whether the symbol is a number and equal to
+the given value within double precision rounding errors
+<code>(1e-15)+(1e-15)*|y|</code>. So, the equality is approximated.</p>
 <p class="code">
-void ll_append(struct ll **a, void *e);</p>
+int is_double(struct symbol *s, double y);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>s</th>
+<td class="description">the symbol to check for approximate equality</td></tr>
+<tr><th>y</th>
+<td class="description">the value to compare against</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">truth value</p>
+<h3 class="function"><a id="is_equal">is_equal</a></h3>
+<p class="description">This function tests whether two symbols are equal. It uses
+<code>memcmp()</code>, so the equality must be exact, but it works regardless
+of the symbol's type. Two non-existent symbols are considered
+equal, as in: <code>(NULL==NULL)</code>, simlarly <code>is_equal(a,a)</code> is true.</p>
+<p class="code">
+int is_equal(struct symbol *a, struct symbol *b);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>a</th>
-<td class="description"><code>a</code> is the first element, <code>*a</code> may be <code>NULL</code></td></tr>
-<tr><th>e</th>
-<td class="description">new element</td></tr>
-</tbody></table>
-<h3 class="function"><a id="ll_free">ll_free</a></h3>
-<p class="description">This function assumes that all stored values can be freed using
-<code>free(a-&gt;value)</code> (i.e. the value entry cannot have pointers in it,
-that were used to allocate more memory, as with say an array of
-pointers, or a struct with pointers). It will remove all elements
-from the list and free the contents. To make it harder to access
-the freed elements <code>*a</code> will be set to NULL.</p>
-<p class="code">
-void ll_free(struct ll **a);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>a</th>
-<td class="description">the linked list to clear.</td></tr>
-</tbody></table>
-<h3 class="function"><a id="ll_length">ll_length</a></h3>
-<p class="description">traverses the list once to find the length</p>
-<p class="code">
-int ll_length(struct ll *a);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>a</th>
-<td class="description">linked list, <code>NULL</code> is ok</td></tr>
+<td class="description">left side of the comparison.</td></tr>
+<tr><th>b</th>
+<td class="description">right side of the comparison.</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
-<p class="description">the length of linked list <code>a</code></p>
-<h3 class="function"><a id="ll_pop">ll_pop</a></h3>
-<p class="description">Removes the first element from the linked list, all other elements
-move one position to the front.</p>
+<p class="description">truth value</p>
+<h3 class="function"><a id="symbol_alloc">symbol_alloc</a></h3>
+<p class="description">This is the more flexible allocation function and can create all
+kinds of symbols: numbers, variables, operators and functions. The
+string <code>s</code> is used to initialize the new symbol struct. Conversion
+to a double precision number is attempted, if that fails, the
+string is checked against known operator symbols, given only 1 alphabetical 
+letter, the string is interpreted as a variable. Lastly it's compared against known functions.</p>
 <p class="code">
-void *ll_pop(struct ll **L);</p>
+struct symbol *symbol_alloc(char *s);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
-<tr><th>L</th>
-<td class="description">linked list (address of pointer to first element)</td></tr>
+<tr><th>s</th>
+<td class="description">a string used to initialize the symbol struct with a type and contents</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
-<p class="description">the contents formerly stored in first position</p>
-<h3 class="function"><a id="ll_remove">ll_remove</a></h3>
-<p class="description">This function removes the last element from the list and returns
-the pointer to its value (the pointer that was originally used to
-store the element).</p>
+<p class="description">a pointer to the allocated memory for the new symbol</p>
+<h3 class="function"><a id="symbol_allocd">symbol_allocd</a></h3>
+<p class="description">This function allocates memory for a new symbol and uses the value of <code>d</code> to initialize.</p>
 <p class="code">
-void *ll_remove(struct ll **L);</p>
+struct symbol *symbol_allocd(double d);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
-<tr><th>L</th>
-<td class="description"><code>L</code> is the first element of the list (or *L is NULL).</td></tr>
+<tr><th>d</th>
+<td class="description">the value of the new symbol</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
-<p class="description">pointer to the stored element</p>
-<h3 class="function"><a id="ll_reverse">ll_reverse</a></h3>
-<p class="description">This will reverse the order of elements within the list, no
-allocations will be done (just pointer re-wiring).</p>
+<p class="description">a symbol of type <code>symbol_number</code> with value <code>d</code></p>
+<h3 class="function"><a id="symbol_print">symbol_print</a></h3>
+<p class="description">This function prints a representation of the symbol, as appropriate
+for the type.</p>
 <p class="code">
-struct ll *ll_reverse(struct ll *a);</p>
+void symbol_print(struct symbol *s);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
-<tr><th>a</th>
-<td class="description">upon return, <code>a</code> will still point to the same element, now last in the list.</td></tr>
+<tr><th>s</th>
+<td class="description">the symbol to print (number, operator, varibale name, or function)</td></tr>
 </tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">returns the new first element (previously last element)</p>
 </div>
 </body>
 </html>
