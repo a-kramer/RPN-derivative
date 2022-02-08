@@ -1,7 +1,15 @@
 #include "ll.h"
 #include <assert.h>
 
-void ll_append(struct ll **a, void *e){
+/* appends an element `e` to the end of linked list `a` This will
+ * allocate some more heap memory for the list.  On exit, *a will be
+ * pointing to what it was before, or the new element, if the list was
+ * initially empty.
+ */
+void ll_append(
+	struct ll **a, /* `a` is the first element, `*a` may be `NULL` */
+	void *e) /* new element */
+{
 	struct ll *c=*a;
 	struct ll *n=malloc(sizeof(struct ll));
 	n->next=NULL;
@@ -16,7 +24,13 @@ void ll_append(struct ll **a, void *e){
 	}
 }
 
-void* ll_remove(struct ll **L){
+/* This function removes the last element from the list and returns
+ * the pointer to its value (the pointer that was originally used to
+ * store the element). 
+ */
+void* /* pointer to the stored element */
+ll_remove(struct ll **L) /* `L` is the first element of the list (or *L is NULL). */
+{
 	struct ll **a=L;
 	void *r=NULL;
 	while (*a && (*a)->next){
@@ -28,15 +42,26 @@ void* ll_remove(struct ll **L){
 	return r;
 }
 
-
-void ll_push(struct ll **L, void *e){
+/* The value `e` is placed first into the linked list, pushing the
+ * other elements one position further. Once done *L will point to the
+ * new first element.
+ */
+void ll_push
+(struct ll **L, /* `L` is the first element,  */
+ void *e) /* new element */
+{
 	struct ll *n=malloc(sizeof(struct ll));
 	n->next=*L;
 	n->value=e;
 	*L=n;
 }
 
-void* ll_pop(struct ll **L){
+/* Removes the first element from the linked list, all other elements
+ * move one position to the front.
+ */
+void* /* the contents formerly stored in first position */
+ll_pop(struct ll **L) /* linked list (address of pointer to first element) */
+{
 	void *r=NULL;
 	struct ll *a;
 	if (*L){
@@ -48,7 +73,11 @@ void* ll_pop(struct ll **L){
 	return r;
 }
 
-void ll_cat(struct ll **a, struct ll *b){
+/* concatenates two lists, by appending `b` to the end of `a` */
+void ll_cat
+(struct ll **a, /* `*a` will point to `b` if it was NULL before, new head of the list */
+ struct ll *b) /* `b` will remain a valid pointer after this functionis called */
+{
 	assert(a);
 	struct ll *c=*a;
 	if (c){
@@ -61,7 +90,12 @@ void ll_cat(struct ll **a, struct ll *b){
 	}
 }
 
-struct ll* ll_reverse(struct ll *a){
+/* This will reverse the order of elements within the list, no
+ * allocations will be done (just pointer re-wiring). 
+ */
+struct ll* /* returns the new first element (previously last element) */
+ll_reverse(struct ll *a) /* upon return, `a` will still point to the same element, now last in the list. */
+{
 	struct ll *c=NULL;
 	void *v;
 	while (a){
@@ -71,8 +105,15 @@ struct ll* ll_reverse(struct ll *a){
 	return c;
 }
 
-
-void ll_free(struct ll **a){
+/* This function assumes that all stored values can be freed using
+ * `free(a->value)` (i.e. the value entry cannot have pointers in it,
+ * that were used to allocate more memory, as with say an array of
+ * pointers, or a struct with pointers). It will remove all elements
+ * from the list and free the contents. To make it harder to access
+ * the freed elements `*a` will be set to NULL.
+ */
+void ll_free(struct ll **a) /* the linked list to clear. */
+{
 	struct ll *t;
 	while(*a){
 		t=*a;
@@ -82,9 +123,23 @@ void ll_free(struct ll **a){
 	}
 }
 
-int ll_are_equal(struct ll *a, struct ll *b,  size_t value_size)
+/* This function will check whether two lists `a` and `b` have
+ * identical values (using memcmp on each pair of elements). Both
+ * pointers will be used to traverse the lists and should be both NULL
+ * at the end. if the lists are of different lengths, then the
+ * pointers will not be both NULL and the final check (a==b)
+ * fails. Two empty lists _are_ equal. This works only if the elements
+ * of the list are of the same size, as memcmp is used. This will fail
+ * if the elements contain pointers to heap memory themselves, as
+ * those will be outside of what memcmp compares.
+ */
+int /* returns an integer truth value */
+ll_are_equal
+(struct ll *a, /* first list */
+ struct ll *b, /* second list */
+ size_t value_size) /* sizeof(a->value) */
 {
-	int E=(a==b);
+	int E=1;
 	while (a && b){
 		E=E && (memcmp(a->value,b->value,value_size)==0);
 		a=a->next;
@@ -93,7 +148,11 @@ int ll_are_equal(struct ll *a, struct ll *b,  size_t value_size)
 	return (E && a==b);
 }
 
-int ll_length(struct ll *a){
+
+/* traverses the list once to find the length */
+int /* the length of linked list `a` */
+ll_length(struct ll *a) /* linked list, `NULL` is ok */
+{
 	int k=0;
 	while (a){
 		k++;

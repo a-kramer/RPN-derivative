@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<!-- SECTION: Linked Lists -->
+<head>
+<title>RPN Derivative</title>
+<meta name="keywords" content="Linked Lists">
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<meta name="generator" content="codedoc v3.7">
+<meta name="author" content="Andrei Kramer-Miehe &lt;andrei.kramer@scilifelab.se&gt;">
+<meta name="language" content="en-US">
+<meta name="copyright" content="© Andrei Kramer-Miehe">
+<meta name="version" content="0.0">
+<style type="text/css"><!--
+body, p, h1, h2, h3, h4, h5, h6 {
+    font-family: Fira Sans, sans-serif;
+    color: rgb(160,160,160);
+    background: rgb(40,40,40);
+}
+
+body {
+ font-size: 14pt;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: bold;
+  page-break-inside: avoid;
+}
+h1 {
+  font-size: 200%;
+  margin: 0;
+}
+h2 {
+  font-size: 200%;
+  margin-top: 1.5em;
+}
+h3 {
+  font-size: 150%;
+  margin-bottom: 0.5em;
+  margin-top: 1.5em;
+}
+h4 {
+  font-size: 120%;
+  margin-bottom: 0.5em;
+  margin-top: 1.5em;
+}
+h5 {
+  font-size: 110%;
+  margin-bottom: 0.5em;
+  margin-top: 1.5em;
+}
+h6 {
+  font-size: 105%;
+  margin-bottom: 0.5em;
+  margin-top: 1.5em;
+}
+div.header h1, div.header p {
+  text-align: center;
+}
+div.contents, div.body, div.footer {
+  page-break-before: always;
+}
+.class, .enumeration, .function, .struct, .typedef, .union {
+  border-bottom: solid 2px gray;
+}
+.description {
+  margin-top: 0.5em;
+}
+.function {
+  margin-bottom: 0;
+}
+blockquote {
+  border: solid thin gray;
+  box-shadow: 3px 3px 5px rgba(0,0,0,0.5);
+  padding: 0px 10px;
+  page-break-inside: avoid;
+}
+p code, li code, p.code, pre, ul.code li {
+  background: rgba(127,127,127,0.1);
+  border: thin dotted gray;
+  font-family: Fira Code, monospace;
+  font-size: 100%;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  page-break-inside: avoid;
+}
+p.code, pre, ul.code li {
+  padding: 10px;
+}
+p code, li code {
+  padding: 2px 5px;
+}
+a:link {
+  text-decoration: none;
+  color: rgb(100,100,240);
+}
+a:visited {
+  color: rgb(200,80,200);
+}
+span.info {
+  background: black;
+  border: solid thin black;
+  color: white;
+  font-size: 80%;
+  font-style: italic;
+  font-weight: bold;
+  white-space: nowrap;
+}
+h1 span.info, h2 span.info, h3 span.info, h4 span.info {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  float: right;
+  padding: 3px 6px;
+}
+ul.code, ul.contents, ul.subcontents {
+  list-style-type: none;
+  margin: 0;
+  padding-left: 0;
+}
+ul.code li {
+  margin: 0;
+}
+ul.contents > li {
+  margin-top: 1em;
+}
+ul.contents li ul.code, ul.contents li ul.subcontents {
+  padding-left: 2em;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+td {
+  border: solid 1px #666;
+  padding: 5px 10px;
+  vertical-align: top;
+}
+td.left {
+  text-align: left;
+}
+td.center {
+  text-align: center;
+}
+td.right {
+  text-align: right;
+}
+th {
+  border-bottom: solid 2px #000;
+  padding: 1px 5px;
+  text-align: center;
+  vertical-align: bottom;
+}
+tr:nth-child(odd) {
+  background: rgba(127,127,127,0.1);
+}
+table.list {
+  border-collapse: collapse;
+  width: 100%;
+}
+table.list th {
+  border-bottom: none;
+  border-right: 2px solid gray;
+  font-family: monospace;
+  padding: 5px 10px 5px 2px;
+  text-align: right;
+  vertical-align: top;
+}
+table.list td {
+  border: none;
+  padding: 5px 2px 5px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+h2.title, h3.title {
+  border-bottom: solid 2px black;
+}
+--></style>
+</head>
+<body>
+<div class="header">
+<h1 class="title">RPN Derivative</h1>
+<p>Andrei Kramer-Miehe &lt;andrei.kramer@scilifelab.se&gt;</p>
+<p>© Andrei Kramer-Miehe</p>
+</div>
+<div class="contents">
+<h2 class="title">Contents</h2>
+<ul class="contents">
+<li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
+<li><a href="#ll_append">ll_append</a></li>
+<li><a href="#ll_free">ll_free</a></li>
+<li><a href="#ll_length">ll_length</a></li>
+<li><a href="#ll_pop">ll_pop</a></li>
+<li><a href="#ll_remove">ll_remove</a></li>
+<li><a href="#ll_reverse">ll_reverse</a></li>
+</ul></li>
+</ul>
+</div>
+<div class="body">
+<h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
+<h3 class="function"><a id="ll_append">ll_append</a></h3>
+<p class="description">appends an element <code>e</code> to the end of linked list <code>a</code> This will
+allocate some more heap memory for the list.  On exit, *a will be
+pointing to what it was before, or the new element, if the list was
+initially empty.</p>
+<p class="code">
+void ll_append(struct ll **a, void *e);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description"><code>a</code> is the first element, <code>*a</code> may be <code>NULL</code></td></tr>
+<tr><th>e</th>
+<td class="description">new element</td></tr>
+</tbody></table>
+<h3 class="function"><a id="ll_free">ll_free</a></h3>
+<p class="description">This function assumes that all stored values can be freed using
+<code>free(a-&gt;value)</code>. It will remove all elements from the list and
+free the contents. To make it harder to access the freed elements
+<code>a</code> will be set to NULL.</p>
+<p class="code">
+void ll_free(struct ll **a);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description"></td></tr>
+</tbody></table>
+<h3 class="function"><a id="ll_length">ll_length</a></h3>
+<p class="description">traverses the list once to find the length</p>
+<p class="code">
+int ll_length(struct ll *a);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">linked list, <code>NULL</code> is ok</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">the length of linked list <code>a</code></p>
+<h3 class="function"><a id="ll_pop">ll_pop</a></h3>
+<p class="description">Removes the first element from the linked list, all other elements
+move one position to the front.</p>
+<p class="code">
+void *ll_pop(struct ll **L);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>L</th>
+<td class="description">linked list (address of pointer to first element)</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">returned value, formerly stored at first position</p>
+<h3 class="function"><a id="ll_remove">ll_remove</a></h3>
+<p class="description">This function removes the last element from the list and returns
+the pointer to its value (the pointer that was originally used to
+store the element).</p>
+<p class="code">
+void *ll_remove(struct ll **L);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>L</th>
+<td class="description"><code>L</code> is the first element of the list (or *L is NULL).</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">pointer to the stored element</p>
+<h3 class="function"><a id="ll_reverse">ll_reverse</a></h3>
+<p class="description">This will reverse the order of elements within the list, no
+allocations will be done (just pointer re-wiring).</p>
+<p class="code">
+struct ll *ll_reverse(struct ll *a);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">upon return, <code>a</code> will still point to the same element, now last in the list.</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">returns the new first element (previously last element)</p>
+</div>
+</body>
+</html>
