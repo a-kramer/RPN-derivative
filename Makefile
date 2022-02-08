@@ -1,7 +1,7 @@
-CC = gcc
+CC = tcc
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 
-.PHONY: all test
+.PHONY: all test clean
 
 
 all: bin/derivative bin/simplify tests/ll_test
@@ -18,3 +18,6 @@ tests/ll_test: tests/ll_test.c src/ll.c
 
 test: bin/derivative bin/simplify tests/ll_test
 	./tests/test.sh
+
+clean:
+	rm bin/derivative bin/simplify tests/ll_test

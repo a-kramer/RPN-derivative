@@ -110,7 +110,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	
 	assert(op->type==symbol_operator);
 	switch(op->name){
-  case '+':
+	case '+':
 		if (a0){
 			ll_free(&a);
 			ll_cat(&res,simplify(b));
@@ -142,7 +142,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_cat(&res,simplify(a));
 		}
 		break;
-  case '/':
+	case '/':
 		if (ll_are_equal(a,b,sym_size)){
 			ll_free(&a);
 			ll_free(&b);
@@ -189,7 +189,7 @@ struct ll* simplify(struct ll *stack){
 			stack=p->next;
 			p->next=NULL;
 			ll_cat(&res,basic_op_simplify(a,b,s));
-      break;
+			break;
 		case symbol_function:
 			a=stack;
 			d=depth(a);
