@@ -84,10 +84,11 @@ struct ll* rpn_copy(struct ll *a){
 	return b;
 }
 
-struct ll* function_derivative(enum func f, struct ll *a, char x){
+struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 	struct ll *res=NULL;
 	struct ll *a_rev=NULL;
-	switch(f){
+	assert(fun->type==symbol_function);
+	switch(fun->f){
 	case f_exp:
 		a_rev=rpn_reverse_copy(a);
 		ll_cat(&res,a_rev);
@@ -102,24 +103,25 @@ struct ll* function_derivative(enum func f, struct ll *a, char x){
 }
 
 
-struct ll* basic_op_derivative(const char op, struct ll *a, struct ll *b, const char x){
+struct ll* basic_op_derivative(struct symbol *op, struct ll *a, struct ll *b, const char x){
 	struct ll *res=NULL;
 	struct ll *a_rev=NULL;
 	struct ll *b_rev=NULL;
 	struct ll *bb=NULL;
-	char op0[2]={op,'\0'};
-	switch (op){
+	assert(op->type==symbol_operator);
+	switch (op->name){
 	case '+':
 		ll_cat(&res,derivative(a,x));
 		ll_cat(&res,derivative(b,x));
-		ll_append(&res,symbol_alloc(op0));
+		ll_append(&res,op);
 		break;
 	case '-':
 		ll_cat(&res,derivative(a,x));
 		ll_cat(&res,derivative(b,x));
-		ll_append(&res,symbol_alloc(op0));
+		ll_append(&res,op);
 		break;
 	case '*':
+		free(op);
 		a_rev=rpn_reverse_copy(a);
 		b_rev=rpn_reverse_copy(b);
 		ll_cat(&res,derivative(a,x));
@@ -135,17 +137,6 @@ struct ll* basic_op_derivative(const char op, struct ll *a, struct ll *b, const 
 		b_rev=rpn_reverse_copy(b);
 		bb=rpn_copy(b_rev);
 		ll_cat(&bb,rpn_copy(b_rev));
-		/*
-		printf("a: ");
-		rpn_print(a_rev);
-		putchar('\n');
-		printf("b: ");
-		rpn_print(b_rev);
-		putchar('\n');
-		printf("bb: ");
-		rpn_print(bb);
-		putchar('\n');
-		*/
 		ll_cat(&res,derivative(a,x));
 		ll_cat(&res,b_rev);
 		ll_append(&res,symbol_alloc("*"));
@@ -155,14 +146,14 @@ struct ll* basic_op_derivative(const char op, struct ll *a, struct ll *b, const 
 		ll_append(&res,symbol_alloc("-"));
 		ll_cat(&res,bb);
 		ll_append(&res,symbol_alloc("*"));
-		ll_append(&res,symbol_alloc("/"));
+		ll_append(&res,op);
 		break;		
 	}
 	return res;
 }
 
 struct ll* derivative(struct ll *pn, const char x){
-	struct symbol *s=pn?pn->value:NULL;
+	struct symbol *s=ll_pop(&pn);
 	enum symbol_type t;
 	struct ll *a=NULL, *b=NULL;
 	struct ll *p=pn;
@@ -173,6 +164,7 @@ struct ll* derivative(struct ll *pn, const char x){
 		switch (t){
 		case symbol_number:
 			ll_append(&res,symbol_alloc("0"));
+			free(s);
 			break;
     case symbol_var:
 			if (x==s->name){
@@ -180,10 +172,9 @@ struct ll* derivative(struct ll *pn, const char x){
 			}else{
 				ll_append(&res,symbol_alloc("0"));
 			}
+			free(s);
 			break;
 		case symbol_operator:
-			assert(p->next);
-			p=p->next;
 			b=p;
 			d=depth(b);
 			for (i=0;i<d;i++){
@@ -192,11 +183,16 @@ struct ll* derivative(struct ll *pn, const char x){
 			}
 			a=p->next;
 			p->next=NULL;
-			ll_cat(&res,basic_op_derivative(s->name,a,b,x));
+			p=a;
+			d=depth(a);
+			for (i=0;i<d;i++){
+				assert(p->next);
+				p=p->next;
+			}
+			p->next=NULL;
+			ll_cat(&res,basic_op_derivative(s,a,b,x));
 			break;
 		case symbol_function:
-			assert(p->next);
-			p=p->next;
 			a=p;
 			d=depth(a);
 			for (i=0;i<d;i++){
@@ -205,7 +201,8 @@ struct ll* derivative(struct ll *pn, const char x){
 			}
 			b=p->next;
 			p->next=NULL;
-			ll_cat(&res,function_derivative(s->f,a,x));
+			ll_cat(&res,function_derivative(s,a,x));
+			break;
 		}
 	}
 	return res;

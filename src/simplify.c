@@ -87,6 +87,8 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 			ll_append(&res,symbol_allocd(1.0));
 		}
 		break;
+	default:
+		fprintf(stderr,"[%s] unknown function «%i»\n",__func__,func->f);		
 	}
 	if (!res) {
 		ll_cat(&res,simplify(a));
