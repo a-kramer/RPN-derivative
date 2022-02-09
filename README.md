@@ -10,6 +10,59 @@ An unbalanced expression produces an empty line in the output.
 
 ## Usage
 
+The programs in this repository are meant to be used via pipes:
+```bash
+... | to_rpn | derivative x | simplify
+```
+They all read _n_ lines from standard input (stdin) and output _n_ lines to standard output (stdout).
+
+### Conversion to rpn
+
+The program `to_rpn` reads `stdin` for math expressions in infix
+notation (the normal kind) and tries to convert them into reverse
+Polish notation:
+
+```
+$ bin/to_rpn < math.txt
+[...]
+```
+
+This program takes no command line arguments.
+
+### derivative
+
+```
+$ bin/to_rpn < math.txt | derivative 't'
+```
+
+The `derivative` function takes one mandatory command line argument,
+the name of a variable _t_. The derivative of the input expressions
+will be calculated with respect to the named variable.
+
+### simplify
+
+`simplify` tries to reduce the length of an rpn expression by eliminating
+obviously unnecessary operations like `x 0 +`.
+
+```bash
+echo "x 0 0 + +" | simplify [n]
+```
+
+This program has one optional parameter _n_ (an integer):
+simplification will be repeated _n_ times. This is equivalent to
+repeated calls to `simplify`:
+
+```
+$ echo "x 0 0 + +" | bin/simplify 
+x 0 +
+$ echo "x 0 0 + +" | bin/simplify | bin/simplify
+x
+$ echo "x 0 0 + +" | bin/simplify 2
+x
+```
+
+#### Note
+
 To calculate the derivative of `x*y/(a+b)` with respect to `y`:
 
 ```bash
@@ -19,43 +72,71 @@ produces:
 ```
 x a b + * a b + a b + * /
 ```
-which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so `x/(a+b)`). This is almost right, and technically correct.
 
-simplify doesn't know math, it only tries some simple pattern recognition.
+which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so
+`x/(a+b)`). This is almost right (technically correct, but
+unnecessary).
 
-A better working example `d[x*y*(y+2)]/dy`:
+So, `simplify` doesn't really know math, it merely tries some simple
+pattern recognition.
+
+An easier example `d[x*y*(y+2)]/dy`:
 
 ```bash
 $ echo -e "x y * y 2 + *" | ./derivative y | ./simplify 2
 ```
+
 outputs:
 ```
 x y 2 + * x y * +
 ```
-which is `x*(y+2) + x*y`, which looks OK.
+
+which is `x*(y+2) + x*y` (OK). In some cases, it may be easy enough to
+parse the output with `sed` and get rid of unnecessary terms.
+
+## Mathematical Functions
+
+To make it easy to parse math expressions, standard math functions
+shall be prefixed with an `@`. This is to avoid confusion with
+variable names. It would have been possible to distinguish functions
+and variable names by string matching and reserving a list of names
+for functions. 
+
+But, a function may very well not yet be implemented and thus be
+understood as a variable name. But with a leading `@` an error will
+occur if the function is not understood.
+
+Currently: `@exp, @log, @sin, @cos`
 
 ## Limitations
 
-Many. Very few symbols and functions are and will ever be supported.
+Many. Very few operator symbols and functions are and will ever be
+supported. Notably, the _power(a,b)_ function is currently missing as
+are all logical opertors, bitwise operators and integer arithmetic
+(e.g. remainder/modulus).
 
-There are no checks to see if the input is a valid RPN expression.
+There are very few checks to see if the input is a _valid_ RPN expression.
 
-There are some unchecked assumptions about the purpose of the RPN
-expression (e.g. it doesn't leave a full stack of numbers without
-operations).
-
-All variables must be one letter, anything that is longer than one letter is currently considered a standard mathematical function (like `exp` or `sin`).
+All variables must be one letter.
 
 This will never become a scripting language like `dc`, with registers
-and user defined macros.
+and user defined macros (or other things that are too hard for me to
+implement).
+
+## Documentation
+
+The [doc](./doc) folder contains developer documentation in html form,
+created with [codedoc](https://github.com/michaelrsweet/codedoc).
+
+The [src](./src) folder contains further notes on the code
+organization.
 
 ## Plans
 
-I want to add conversion between infix and rpn notation as well as
-automatic conversion from rpn strings to C code. Then, it will be possible to do this (perhaps): 
+Near future: automatic conversion from rpn strings to C code. Then, it will be possible to do this (perhaps): 
 ```bash
 $ # planned:
-$ echo "x*y" | infix_to_rpn | derivative x | simplify 3 | rpn_to_c 
+$ echo "x*y" | to_rpn | derivative x | simplify 3 | rpn_to_c 
 ```
 
 maybe like this
@@ -65,4 +146,7 @@ double derivative(double x, double y)
  return y;
 }
 ```
-Or something similar. But specifically, this project aims to automatically calculate the Jacobian of a vector valued function used as right hand side in ordinary differential equations.
+
+Or something similar. But specifically, this project aims to
+automatically calculate the Jacobian of a vector valued function used
+as right hand side in ordinary differential equations.

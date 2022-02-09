@@ -36,6 +36,17 @@ symbol_allocd(double d) /* the value of the new symbol */
 	return n;
 }
 
+struct symbol* symbol_alloc_op(char op)
+{
+	struct symbol *n=malloc(sizeof(struct symbol));
+	assert(n);
+	assert(op!='\0' && strchr("+-*/",op));
+	n->type=symbol_operator;
+	n->name=op;
+	n->nargs=0;
+	return n;
+}
+
 /* This is the more flexible allocation function and can create all
  * kinds of symbols: numbers, variables, operators and functions. The
  * string `s` is used to initialize the new symbol struct. Conversion
@@ -59,15 +70,18 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
     if (len==1 && strchr("+-*/^",c)){
 			n->type=symbol_operator;
 			n->name=c;
-			n->nargs=2;			
-		} else if (len==1 && isalpha(c)){
+			n->nargs=2;
+		} else if(c=='@') {
+			n->type=symbol_function;
+			n->f=match_func(s+1);
+			n->nargs=1;
+		} else if (isalpha(c)){
 			n->type=symbol_var;
 			n->name=c;
 			n->nargs=0;
 		} else {
-			n->type=symbol_function;
-			n->f=match_func(s);
-			n->nargs=1;
+			fprintf(stderr,"[%s] unexpected case «%s».\n",__func__,s);
+			abort();
 		}
 	} else {
 		n->type=symbol_number;
@@ -93,7 +107,7 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 		printf("%c ",s->name);
 		break;
 	case symbol_function:
-		printf("%s ",fname[s->f]);
+		printf("@%s ",fname[s->f]);
 		break;
 	}
 }
