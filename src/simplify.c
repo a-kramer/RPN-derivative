@@ -3,13 +3,13 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
-#include "symbol.h"
-#include "ll.h"
+#include "rpn.h"
+//#include "symbol.h"
+//#include "ll.h"
 
 #define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
 #define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
 
-void rpn_print(struct ll *rpn);
 struct ll* simplify(struct ll *stack);
 
 void help(char *name){
@@ -18,37 +18,6 @@ void help(char *name){
 	printf("\t%s will attempt to simplify a symbolic expression\n\tin reverse polish notation \n",name);
 	printf("\texample: $ echo 'x 0 *' | %s\n",name);
 	printf("\t         0\n");	
-}
-
-
-
-/* calculate the number of terms necessary to evaluate the first
- * symbol. if the list ends prematurely, a negative depth is returned.
- */
-int depth(struct ll *pn){
-	int n=0;
-	int d=0;
-	if (pn){
-		n=NARGS(pn);
-		while (n){
-			if (pn) pn=pn->next;
-			else return -1;
-			n--;
-			d++;
-			n+=NARGS(pn);			
-		}		
-	}
-	return d;
-}
-
-
-void rpn_print(struct ll *rpn){
-	struct symbol *s;
-	while (rpn){
-		s=rpn->value;
-		symbol_print(s);
-		rpn=rpn->next;
-	}
 }
 
 struct ll* function_simplify(struct ll *a, struct symbol *func)
@@ -210,14 +179,6 @@ struct ll* simplify(struct ll *stack){
 	}
 	return res;
 }
-
-int balanced(struct ll *pn)
-{
-	int d=depth(pn);
-	int l=ll_length(pn);
-  return (d==l-1);
-}
-
 
 /* open stdin to read an expression in reverse polish notation to simplify it using very simple rules */
 int main(int argc, char* argv[]){

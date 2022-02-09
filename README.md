@@ -6,6 +6,7 @@ external libraries.
 
 The input expression must be balanced: `x y z +` has an unused operand, `x +` lacks an operand.
 
+An unbalanced expression produces an empty line in the output.
 
 ## Usage
 

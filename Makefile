@@ -7,10 +7,10 @@ CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 all: bin/derivative bin/simplify tests/ll_test
 
 
-bin/derivative: src/derivative.c src/ll.c src/symbol.c
+bin/derivative: src/derivative.c src/ll.c src/symbol.c src/rpn.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-bin/simplify: src/simplify.c src/ll.c src/symbol.c
+bin/simplify: src/simplify.c src/ll.c src/symbol.c src/rpn.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 tests/ll_test: tests/ll_test.c src/ll.c

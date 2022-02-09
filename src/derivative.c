@@ -3,14 +3,11 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
-#include "symbol.h"
-#include "ll.h"
-
-#define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
-#define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
+#include "rpn.h"
+//#include "symbol.h"
+//#include "ll.h"
 
 struct ll* derivative(struct ll *pn, const char x);
-void rpn_print(struct ll *rpn);
 
 void help(char *name){
 	assert(name);
@@ -18,70 +15,6 @@ void help(char *name){
 	printf("\t%s will attempt to calculate the symbolic derivative\n\tof rpn with respect to the symbolic variable 'x'\n",name);
 	printf("\texample: $ echo 'x y *' | %s x\n",name);
 	printf("\t         y\n");	
-}
-
-/* calculate the number of terms necessary to evaluate the first
- * symbol. if the list ends prematurely, a negative depth is returned.
- */
-int depth(struct ll *pn){
-	int n=0;
-	int d=0;
-	if (pn){
-		n=NARGS(pn);
-		while (n){
-			if (pn) pn=pn->next;
-			else return -1;
-			n--;
-			d++;
-			n+=NARGS(pn);			
-		}		
-	}
-	return d;
-}
-
-void rpn_free(struct ll *rpn){
-	struct symbol *s;
-	while (rpn){
-		s=ll_pop(&rpn);
-		free(s);
-	}
-}
-
-void rpn_print(struct ll *rpn){
-	struct symbol *s;
-	while (rpn){
-		s=rpn->value;
-		symbol_print(s);
-		rpn=rpn->next;
-	}
-}
-
-struct ll* rpn_reverse_copy(struct ll *a){
-	struct ll *b=NULL;
-	struct symbol *s;
-	struct symbol *r;
-	while (a){
-		s=a->value;
-		r=malloc(sizeof(struct symbol));
-		memcpy(r,s,sizeof(struct symbol));
-		ll_push(&b,r);
-		a=a->next;
-	}
-	return b;
-}
-
-struct ll* rpn_copy(struct ll *a){
-	struct ll *b=NULL;
-	struct symbol *s;
-	struct symbol *r;
-	while (a){
-		s=a->value;
-		r=malloc(sizeof(struct symbol));
-		memcpy(r,s,sizeof(struct symbol));
-		ll_append(&b,r);
-		a=a->next;
-	}
-	return b;
 }
 
 struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
@@ -128,7 +61,6 @@ struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 	}
 	return res;
 }
-
 
 struct ll* basic_op_derivative(struct symbol *op, struct ll *a, struct ll *b, const char x){
 	struct ll *res=NULL;
@@ -235,13 +167,6 @@ struct ll* derivative(struct ll *pn, const char x){
 	return res;
 }
 
-int balanced(struct ll *pn)
-{
-	int d=depth(pn);
-	int l=ll_length(pn);
-  return (d==l-1);
-}
-
 /* open stdin and perform a derivative wrt to argv[1] */
 int main(int argc, char* argv[]){
 	size_t n=20;
@@ -271,7 +196,7 @@ int main(int argc, char* argv[]){
 				if (pn && balanced(pn)) res=derivative(pn,x[0]);
 				rpn_print(res);
 				putchar('\n');
-				rpn_free(res);
+				ll_free(&res);
 			}
 		} while (!feof(stdin));
 	} else {

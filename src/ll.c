@@ -105,6 +105,28 @@ ll_reverse(struct ll *a) /* upon return, `a` will still point to the same elemen
 	return c;
 }
 
+/* This copies linked list `a`, including the stored values, via
+ * `memcpy()`. The elements must not contain pointers to more
+ * allocated memory, this is not a deep/nested copy.
+ */
+struct ll* /* a new list, with heap allocated memory */
+ll_copy(
+	struct ll *a, /* list to copy */
+	size_t z) /* size of the elements as reported by `sizeof()` */
+{
+	assert(z);
+	struct ll *b=NULL;
+	struct ll **p=&b;
+	while(a){
+		*p=malloc(sizeof(struct ll));
+		(*p)->value=malloc(z);
+		memcpy((*p)->value,a->value,z);
+		p=&((*p)->next);
+		a=a->next;
+	}
+	return(b);
+}
+
 /* This function assumes that all stored values can be freed using
  * `free(a->value)` (i.e. the value entry cannot have pointers in it,
  * that were used to allocate more memory, as with say an array of
