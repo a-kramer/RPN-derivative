@@ -20,6 +20,10 @@ void help(char *name){
 struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 	struct ll *res=NULL;
 	struct ll *a_rev=NULL;
+	struct ll *base_rev=NULL, *base_rev2=NULL;
+	struct ll *p_rev=NULL;//, *p_rev2=NULL;	
+	struct ll *base=NULL;
+	struct ll *p=NULL;
 	assert(fun->type==symbol_function);
 	switch(fun->f){
 	case f_exp:
@@ -55,6 +59,30 @@ struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 		ll_cat(&res,derivative(a,x));
 		ll_append(&res,symbol_alloc("*"));
 		free(fun);
+		break;
+	case f_pow:
+		/* pow(base,power)*/
+		a_rev=rpn_reverse_copy(a);
+		p=a; /* power */
+		base=ll_cut(p,depth(p));
+		/* needed copies */
+		p_rev=rpn_reverse_copy(p);
+		//p_rev2=rpn_reverse_copy(p);
+		base_rev=rpn_reverse_copy(base);
+		base_rev2=rpn_reverse_copy(base);
+		/* operations */
+		ll_cat(&res,a_rev);
+		ll_append(&res,fun);
+		ll_cat(&res,derivative(p,x));
+		ll_cat(&res,base_rev);
+		ll_append(&res,symbol_alloc("*"));
+		ll_cat(&res,p_rev);
+		ll_cat(&res,base_rev2);
+		ll_append(&res,symbol_alloc("/"));
+		ll_cat(&res,derivative(base,x));
+		ll_append(&res,symbol_alloc("*"));
+		ll_append(&res,symbol_alloc("+"));
+		ll_append(&res,symbol_alloc("*"));
 		break;
 	default:
 		printf("unhandled case");
@@ -117,7 +145,6 @@ struct ll* derivative(struct ll *pn, const char x){
 	struct ll *a=NULL, *b=NULL;
 	struct ll *p=pn;
 	struct ll *res=NULL;
-	int i,d;
 	if (s){
 		t=s->type;
 		switch (t){
@@ -135,32 +162,11 @@ struct ll* derivative(struct ll *pn, const char x){
 			break;
 		case symbol_operator:
 			b=p;
-			d=depth(b);
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			a=p->next;
-			p->next=NULL;
-			p=a;
-			d=depth(a);
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			p->next=NULL;
+			a=ll_cut(b,depth(b));
 			ll_cat(&res,basic_op_derivative(s,a,b,x));
 			break;
 		case symbol_function:
-			a=p;
-			d=depth(a);
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			b=p->next;
-			p->next=NULL;
-			ll_cat(&res,function_derivative(s,a,x));
+			ll_cat(&res,function_derivative(s,p,x));
 			break;
 		}
 	}

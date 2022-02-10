@@ -1,4 +1,4 @@
-CC = tcc
+CC = gcc
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 
 .PHONY: all test clean

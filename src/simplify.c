@@ -20,13 +20,39 @@ void help(char *name){
 	printf("\t         0\n");	
 }
 
+/* base^p */
+struct ll* simplify_pow(struct symbol *func, struct ll *base, struct ll *p)
+{
+	struct ll* res=NULL;
+	if (depth(p)==0 && is_double(p->value,1.0)){
+		ll_free(&p);
+		ll_cat(&res,simplify(base));
+		free(func);
+	} else if (depth(p)==0 && is_double(p->value,0.0)){
+		ll_free(&p);
+		ll_free(&base);
+		ll_append(&res,symbol_allocd(1.0));
+		free(func);
+	} else if (depth(base)==0 && is_double(base->value,1.0)){
+		ll_free(&p);
+		ll_free(&base);
+		ll_append(&res,symbol_allocd(1.0));
+		free(func);
+	} else {
+		ll_cat(&res,simplify(base));
+		ll_cat(&res,simplify(p));
+		ll_append(&res,func);
+	}
+	return res;
+}
+
 struct ll* function_simplify(struct ll *a, struct symbol *func)
 {
 	//size_t sym_size=sizeof(struct symbol);
 	int a0=(depth(a)==0 && is_double(a->value,0.0));
 	int a1=(depth(a)==0 && is_double(a->value,1.0));
-	
-	struct ll* res=NULL;
+	struct ll *base=NULL;
+	struct ll *res=NULL;
 	assert(func->type==symbol_function);
 	switch (func->f){
 	case f_exp:
@@ -57,6 +83,11 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 			ll_append(&res,symbol_allocd(1.0));
 		}
 		break;
+	case f_pow:
+		/* base^p*/
+		base=ll_cut(a,depth(a));
+		ll_cat(&res,simplify_pow(func,base,a));
+		break;
 	default:
 		fprintf(stderr,"[%s] unknown function «%i»\n",__func__,func->f);		
 	}
@@ -77,7 +108,6 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	int a1=(da==0 && is_double(a->value,1.0));
 	int b0=(db==0 && is_double(b->value,0.0));
 	int b1=(db==0 && is_double(b->value,1.0));
-	
 	assert(op->type==symbol_operator);
 	switch(op->name){
 	case '+':
@@ -134,48 +164,27 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 
 struct ll* simplify(struct ll *stack){
 	struct symbol *s;
-	int i,d;
-	struct ll *p,*a,*b;
+	struct ll *a,*b;
 	struct ll *res=NULL;
+	/* printf("[%s] stack: ",__func__); */
+	/* rpn_print(stack); */
+	/* putchar('\n'); */
+	/* fflush(stdout); */
 	if (stack){
 		s=ll_pop(&stack);
 		switch(s->type){
 		case symbol_operator:
-			p=stack;
-			b=p;
-			d=depth(b);
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			a=p->next;
-			p->next=NULL;
-			d=depth(a);
-			p=a;
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			stack=p->next;
-			p->next=NULL;
+			b=stack;
+			a=ll_cut(b,depth(b));
+			stack=ll_cut(a,depth(a));
 			ll_cat(&res,basic_op_simplify(a,b,s));
 			break;
 		case symbol_function:
-			a=stack;
-			d=depth(a);
-			p=a;
-			for (i=0;i<d;i++){
-				assert(p->next);
-				p=p->next;
-			}
-			stack=p->next;
-			p->next=NULL;			
-			ll_cat(&res,function_simplify(a,s));
+			ll_cat(&res,function_simplify(stack,s));
 			break;
 		default:
 			ll_append(&res,s);
 		}
-		ll_cat(&res,simplify(stack));	
 	}
 	return res;
 }

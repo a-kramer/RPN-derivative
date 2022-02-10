@@ -2,7 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
-const char *fname[]={"exp","log","sin","cos",""};
+const char *fname[]={"exp","log","sin","cos","pow",""};
+const int fnargs[]={1,1,1,1,2,0};
 
 /* This function tries to match the contents of a string against a
  * list of known function names. The global list of function names
@@ -74,7 +75,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 		} else if(c=='@') {
 			n->type=symbol_function;
 			n->f=match_func(s+1);
-			n->nargs=1;
+			n->nargs=fnargs[n->f];
 		} else if (isalpha(c)){
 			n->type=symbol_var;
 			n->name=c;

@@ -73,6 +73,26 @@ ll_pop(struct ll **L) /* linked list (address of pointer to first element) */
 	return r;
 }
 
+/* given a list `a` and a length `k`, `ll_cut` will sever the list's connection after `k` elements and divide the list in two, `a` will continue pointing to the first `k` elements. (no allocations) */
+struct ll* /* the remainder of the list (tail) */
+ll_cut(
+	struct ll *a, /* list to cut */
+	int k) /* steps taken from before cutting. */
+{
+	struct ll *p=a;
+	struct ll *b=NULL;
+	int i;
+  for (i=0 ; i<k && p; i++){
+		assert(p);
+		p=p->next;
+	}
+	if (p) {
+		b=p->next;
+		p->next=NULL;
+	}
+	return b;
+}
+
 /* concatenates two lists, by appending `b` to the end of `a` */
 void ll_cat
 (struct ll **a, /* `*a` will point to `b` if it was NULL before, new head of the list */
