@@ -131,6 +131,57 @@ created with [codedoc](https://github.com/michaelrsweet/codedoc).
 The [src](./src) folder contains further notes on the code
 organization.
 
+## Small Tests
+
+It is possible to manually test simple cases numerically, without
+external software. We use [dc](https://linux.die.net/man/1/dc) to do
+this, as it is probably installed on every unix like/related
+system. The `dc` program wants reverse polish notation as input, so it
+is perfectly suited to check output from `bin/derivative` before it
+has been converted to R or C code (see the next Section).
+
+There are two shell scripts in the `tests` folder that help with the
+testing: 
+
+1. [numerical.sh](tests/numerical.sh) 
+2. [eval.sh](tests/eval.sh)
+
+The first script calculates the finite difference approximation of a
+derivative a given an rpn expression for `f`: `(f(x+h)-f(x-h))/(d*h)`;
+the second script evaluates any rpn expression using `dc` (it does all
+necessary substitutionsso that `dc` will accept the expression).
+
+```bash
+echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
+```
+
+The above instruction will calculate the finite difference at `x=2`
+and `h=0.001` and pass the expression on to `eval.sh`, which in turn will substitute all occurences of `a` with `2`. 
+
+This finally calls `dc` with the following instruction:
+```dc
+2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p
+```
+
+The final instruction _p_ prints the result `12`:
+```bash
+$ dc -e '2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p'
+12
+```
+
+which is correct. We can compare this to the analytical derivative:
+
+```bash
+$ echo 'x a @pow' | bin/derivative x | bin/simplify 3 | tests/eval.sh a=3 x=2
+12.0000000000
+$ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
+12.0000005000
+```
+
+*note* normally `dc` will floor fractions, to avoid this we set the
+precision to 10 digits: `dc -e '3 2 / p'` prints `1` (floor(3/2) is
+1).
+
 ## Plans
 
 Near future: automatic conversion from rpn strings to C code. Then, it will be possible to do this (perhaps): 

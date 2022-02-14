@@ -16,5 +16,5 @@ while read rpn; do
 	fx_plus_h=`echo "${rpn}" | sed -e "s/${var}/${x_plus_h}/g"`
 	fx_minus_h=`echo "${rpn}" | sed -e "s/${var}/${x_minus_h}/g"`
 	#echo "${fx_plus_h}, ${fx_minus_h}"
-	dc -e "${fx_plus_h} ${fx_minus_h} - 2 $h * / p"	
+	echo "${fx_plus_h} ${fx_minus_h} - 2 $h * /"	
 done
