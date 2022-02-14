@@ -155,15 +155,16 @@ necessary substitutionsso that `dc` will accept the expression).
 echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
 ```
 
-The above instruction will calculate the finite difference at `x=2`
-and `h=0.001` and pass the expression on to `eval.sh`, which in turn will substitute all occurences of `a` with `2`. 
+The above instruction will calculate the finite difference at _x_=2
+and _h_=1e-4 and pass the expression on to `eval.sh`, which in turn
+will substitute all occurences of _a_ with 3.
 
 This finally calls `dc` with the following instruction:
 ```dc
 2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p
 ```
 
-The final instruction _p_ prints the result `12`:
+The final instruction _p_ prints the result 12:
 ```bash
 $ dc -e '2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p'
 12

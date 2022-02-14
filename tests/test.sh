@@ -30,7 +30,8 @@ echo -n "\e[0m"
 
 echo "(2) compare to numerical solutions"
 printf "test: %${W}s\t" "derivative of '-1 a * t 3 @pow *'"
-[ -f bin/derivative ] && echo "-1 a * t 3 @pow *"  | bin/derivative t | bin/simplify 4 | sed -e 's/@pow/^/' -e 's/$/ p/' -e 's/a/0.1/g' -e 's/t/1.0/g' -e 's/-\([0-9]\)/_\1/g' | dc
+[ -f bin/derivative ] && echo "-1 a * t 3 @pow *"  | bin/derivative t | bin/simplify 4 | tests/eval.sh t=2 a=0.1
 
 printf "test: %${W}s\t" "finite diff. '-1 a * t 3 @pow *'"
-[ -f tests/numerical.sh ] && echo "-1 a * t 3 @pow *" | bin/derivative t | bin/simplify 4 | echo "-1 a * t 3 @pow *"  | bin/derivative t | bin/simplify 4 | sed  -e 's/a/0.1/g'  | tests/numerical.sh t 1.0 0.0001
+[ -f tests/numerical.sh ] && echo "-1 a * t 3 @pow *" | tests/numerical.sh t 2 0.0001 | tests/eval.sh a=0.1
+
