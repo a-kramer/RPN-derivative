@@ -27,6 +27,7 @@ void rpn_print(struct ll *r) /* pointer to first element */
 	while (r){
 		s=r->value;
 		symbol_print(s);
+		if (r->next) putchar(' ');
 		r=r->next;
 	}
 }

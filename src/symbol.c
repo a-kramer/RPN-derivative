@@ -92,6 +92,10 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	return n;
 }
 
+const char* function_name(enum func f){
+  return fname[f];
+}
+
 /* This function prints a representation of the symbol, as appropriate
  * for the type. 
  */
@@ -99,16 +103,16 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 {
 	switch (s->type){
 	case symbol_number:
-		printf("%g ",s->value);
+		printf("%g",s->value);
 		break;
 	case symbol_var:
-		printf("%c ",s->name);
+		printf("%c",s->name);
 		break;
 	case symbol_operator:
-		printf("%c ",s->name);
+		printf("%c",s->name);
 		break;
 	case symbol_function:
-		printf("@%s ",fname[s->f]);
+		printf("@%s",fname[s->f]);
 		break;
 	}
 }

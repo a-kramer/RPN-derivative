@@ -106,6 +106,24 @@ x y 2 + * x y * +
 which is `x*(y+2) + x*y` (OK). In some cases, it may be easy enough to
 parse the output with `sed` and get rid of unnecessary terms.
 
+### rpn to infix
+
+The output of the programs lilsted in previous Sections can be converted back into infix notation like this:
+
+```bash
+bin/to_infix < rpn_math.txt
+```
+
+Like all other programs in this repository, it reads from standard input and writes to
+standard output.
+
+An example:
+
+```bash
+$ echo "@pow(t,3)" | to_rpn | derivative t | simplify 4 | to_infix
+(pow(t,3)*(3/t))
+```
+
 ## Mathematical Functions
 
 To make it easy to parse math expressions, standard math functions
@@ -134,6 +152,8 @@ All variables must be one letter.
 This will never become a scripting language like `dc`, with registers
 and user defined macros (or other things that are too hard for me to
 implement).
+
+Conversion back into infix notation writes too many parentheses. This is probably fine.
 
 ## Documentation
 

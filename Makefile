@@ -4,7 +4,13 @@ CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 .PHONY: all test clean
 
 
-all: bin/derivative bin/simplify bin/to_rpn tests/ll_test
+all: bin/derivative bin/simplify bin/to_rpn tests/ll_test bin/to_infix bin/to_c
+
+bin/to_c: src/rpn_to_c.c src/ll.c src/symbol.c src/rpn.c
+	$(CC) $(CFLAGS) -o $@ $^
+
+bin/to_infix: src/rpn_to_infix.c src/ll.c src/symbol.c src/rpn.c
+	$(CC) $(CFLAGS) -o $@ $^
 
 bin/to_rpn: src/to_rpn.c src/ll.c src/symbol.c src/rpn.c
 	$(CC) $(CFLAGS) -o $@ $^
