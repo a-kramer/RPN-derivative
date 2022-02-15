@@ -8,6 +8,18 @@ The input expression must be balanced: `x y z +` has an unused operand, `x +` la
 
 An unbalanced expression produces an empty line in the output.
 
+## Compiling
+
+Thedefault compiler is [gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git) will also work. In the root directory of this repository these commands:
+
+```bash
+$ mkdir bin
+$ make
+$ make test 
+```
+
+will create the binaries `derivative`, `simplify`, and `ll_test`; make test will run the tests in [test.sh](tests/test.sh).
+
 ## Usage
 
 The programs in this repository are meant to be used via pipes:
@@ -180,8 +192,10 @@ $ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
 ```
 
 *note* normally `dc` will floor fractions, to avoid this we set the
-precision to 10 digits: `dc -e '3 2 / p'` prints `1` (floor(3/2) is
-1).
+precision (k) to 10 digits: `dc -e '3 2 / p'` prints `1` (floor(3/2) is
+1); `dc -e '3 k 3 2 / p'` prints `1.500` with precision _k_=3.
+
+No formal testing framework is used here.
 
 ## Plans
 
