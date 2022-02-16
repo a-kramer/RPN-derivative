@@ -1,16 +1,30 @@
 # Reverse Polish notation and Derivatives
 
-With this code, I try to calculate the symbolic derivative, say
+With this code, we try to calculate the symbolic derivative, say
 `d(y*x)/dx = y`, with as simple means as possible, without using
 external libraries.
 
-The input expression must be balanced: `x y z +` has an unused operand, `x +` lacks an operand.
+Especially the `derivative` program requires the input to be math in reverse
+Polish notation (rpn), e.g.: `1 2 +` (for 1+2), but this notation does not need, nor
+allow parentheses. On unixy systems the `dc` program also works
+with this notation, so it may be familiar. 
+
+RPN math is easier (*citation needed*) to process as there are no
+parentheses and evaluation follows a very simple algorithm.
+
+The input expression must be balanced: `x y z +` has an unused
+operand, `x +` lacks an operand (`dc` would not care much about that,
+but balanced expressions make the code easier).
 
 An unbalanced expression produces an empty line in the output.
 
+Although it is of course possible to use `derivative` and `simplify`
+by themselves, you can also use `to_rpn` to convert more conventional
+math to rpn notation and `to_infix` to translate the result back.
+
 ## Compiling
 
-Thedefault compiler is [gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git) will also work. In the root directory of this repository these commands:
+The default compiler is [gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git) will also work. In the root directory of this repository these commands:
 
 ```bash
 $ mkdir bin
@@ -20,11 +34,14 @@ $ make test
 
 will create the binaries `derivative`, `simplify`, and `ll_test`; make test will run the tests in [test.sh](tests/test.sh).
 
+There is no `make install` at this stage of development, see
+[note][note.md] (also: no `man` pages yet).
+
 ## Usage
 
 The programs in this repository are meant to be used via pipes:
 ```bash
-... | to_rpn | derivative x | simplify
+[...] | to_rpn | derivative x | simplify
 ```
 They all read _n_ lines from standard input (stdin) and output _n_ lines to standard output (stdout).
 
@@ -39,12 +56,30 @@ $ bin/to_rpn < math.txt
 [...]
 ```
 
-This program takes no command line arguments.
+This program takes no command line arguments. 
+
+#### Caveat: Ambiguity and Spacing
+
+This program tries to convert an item it encounters to a number
+_first_, only if that fails does it consider other possibilities: the
+item could then be an operator, function, or variable name. This
+creates an ambiguity with the unary minus (and plus). Consequently,
+some strings are not interpreted right: `1-2` is read as `+1` and `-2`
+(a sequence of two numbers), but `1 - 2` is understood correctly as
+the operation _minus(1,2)_, `a-b` works perfectly fine because `b` is
+not a valid number. 
+
+The `dc` program resolves this ambiguity by using the underscore to
+denote negative numbers: `dc -e '_1 1 + p'` prints 0 (we don't do that).
+
+The output consists of space separated rpn expressions, so no mixups
+of this sort are likely to happen downstream.
 
 ### derivative
 
-```
-$ bin/to_rpn < math.txt | derivative 't'
+```sh
+$ cd RPN-Derivative
+$ bin/to_rpn < math.txt | bin/derivative t
 ```
 
 The `derivative` function takes one mandatory command line argument,
@@ -56,46 +91,46 @@ will be calculated with respect to the named variable.
 `simplify` tries to reduce the length of an rpn expression by eliminating
 obviously unnecessary operations like `x 0 +`.
 
-```bash
-echo "x 0 0 + +" | simplify [n]
+```sh
+$ alias simplify='~/path/to/simplify'
+$ echo "x 0 0 + +" | simplify [n]
 ```
 
 This program has one optional parameter _n_ (an integer):
 simplification will be repeated _n_ times. This is equivalent to
 repeated calls to `simplify`:
 
-```
-$ echo "x 0 0 + +" | bin/simplify 
+```sh
+$ echo "x 0 0 + +" | simplify 
 x 0 +
-$ echo "x 0 0 + +" | bin/simplify | bin/simplify
+$ echo "x 0 0 + +" | simplify | simplify
 x
-$ echo "x 0 0 + +" | bin/simplify 2
+$ echo "x 0 0 + +" | simplify 2
 x
 ```
 
 #### Note
 
-To calculate the derivative of `x*y/(a+b)` with respect to `y`:
+To calculate the derivative of `x*y/(a+b)` with respect to `y`, we would type:
 
 ```bash
-$ echo -e "x y * a b + /" | ./derivative y | ./simplify 3
+$ echo -e "x y * a b + /" | derivative y | simplify 3
 ```
-produces:
+this produces the output:
 ```
 x a b + * a b + a b + * /
 ```
 
 which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so
 `x/(a+b)`). This is almost right (technically correct, but
-unnecessary).
-
-So, `simplify` doesn't really know math, it merely tries some simple
-pattern recognition.
+unnecessary). Currently, no amount of simplifying will reduce the
+fraction unless it reduces to 1; `simplify` doesn't really know math,
+it merely tries some simple pattern recognition.
 
 An easier example `d[x*y*(y+2)]/dy`:
 
-```bash
-$ echo -e "x y * y 2 + *" | ./derivative y | ./simplify 2
+```sh
+$ echo -e "x y * y 2 + *" | derivative y | simplify 2
 ```
 
 outputs:
@@ -108,10 +143,11 @@ parse the output with `sed` and get rid of unnecessary terms.
 
 ### rpn to infix
 
-The output of the programs lilsted in previous Sections can be converted back into infix notation like this:
+The output of the programs lilsted in previous Sections can be
+converted back into infix notation like this:
 
-```bash
-bin/to_infix < rpn_math.txt
+```sh
+$ bin/to_infix < rpn_math.txt
 ```
 
 Like all other programs in this repository, it reads from standard input and writes to
@@ -124,23 +160,27 @@ $ echo "@pow(t,3)" | to_rpn | derivative t | simplify 4 | to_infix
 (pow(t,3)*(3/t))
 ```
 
+There will be many superfluous parentheses. The `@` symbol will be
+stripped from functions to make it easier to use the expressions
+elsewhere.
+
 ## Mathematical Functions
 
-To make it easy to parse math expressions, standard math functions
-shall be prefixed with an `@`. This is to avoid confusion with
-variable names. It would have been possible to distinguish functions
-and variable names by string matching and reserving a list of names
-for functions. 
+To make it ~easy~ convenient to parse math expressions, standard math
+functions shall be prefixed with an `@`. This is to avoid confusion
+with variable names. It would have been possible to distinguish
+functions and variable names by string matching and reserving a list
+of names for functions.
 
 But, a function may very well not yet be implemented and thus be
 understood as a variable name. But with a leading `@` an error will
 occur if the function is not understood.
 
-Currently: `@exp, @log, @sin, @cos`
+Currently: `@exp, @log, @sin, @cos, @pow`.
 
-## Limitations
+## Limitations: Many
 
-Many. Very few operator symbols and functions are and will ever be
+Very few operator symbols and functions are and will ever be
 supported. Notably, the _power(a,b)_ function is currently missing as
 are all logical opertors, bitwise operators and integer arithmetic
 (e.g. remainder/modulus).
@@ -165,11 +205,14 @@ organization.
 
 ## Small Tests
 
+No formal testing framework is used here, but `make test` will run a
+series of tests from a [shell script](tests/test.sh).
+
 It is possible to manually test simple cases numerically, without
 external software. We use [dc](https://linux.die.net/man/1/dc) to do
 this, as it is probably installed on every unix like/related
 system. The `dc` program wants reverse polish notation as input, so it
-is perfectly suited to check output from `bin/derivative` before it
+is ~perfectly~ well suited to check output from `bin/derivative` before it
 has been converted to R or C code (see the next Section).
 
 There are two shell scripts in the `tests` folder that help with the
@@ -181,28 +224,28 @@ testing:
 The first script calculates the finite difference approximation of a
 derivative a given an rpn expression for `f`: `(f(x+h)-f(x-h))/(d*h)`;
 the second script evaluates any rpn expression using `dc` (it does all
-necessary substitutionsso that `dc` will accept the expression).
+necessary substitutionsso that `dc` will accept the expression), e.g.:
 
-```bash
-echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
+```sh
+$ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
 ```
 
 The above instruction will calculate the finite difference at _x_=2
 and _h_=1e-4 and pass the expression on to `eval.sh`, which in turn
 will substitute all occurences of _a_ with 3.
 
-This finally calls `dc` with the following instruction:
+Finally, `eval.sh` calls `dc` with the following instruction:
 ```dc
 2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p
 ```
 
-The final instruction _p_ prints the result 12:
+The last `dc` command item, _p_, prints the result (12):
 ```bash
 $ dc -e '2.0001 3 ^ 1.9999 3 ^ - 2 0.0001 * / p'
 12
 ```
 
-which is correct. We can compare this to the analytical derivative:
+which is correct (but was rounded). We can compare this to the analytical derivative:
 
 ```bash
 $ echo 'x a @pow' | bin/derivative x | bin/simplify 3 | tests/eval.sh a=3 x=2
@@ -211,11 +254,12 @@ $ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
 12.0000005000
 ```
 
-*note* normally `dc` will floor fractions, to avoid this we set the
-precision (k) to 10 digits: `dc -e '3 2 / p'` prints `1` (floor(3/2) is
-1); `dc -e '3 k 3 2 / p'` prints `1.500` with precision _k_=3.
+*note* normally *dc* will floor fractions. To avoid heavy losses in
+accuracy, we set *dc*'s precision (*k*) to 10 digits: `dc -e '3 2 /
+p'` prints `1` (because floor(3/2) is 1); `dc -e '3 k 3 2 / p'` prints
+`1.500` with precision _k_=3.
 
-No formal testing framework is used here.
+
 
 ## Plans
 
