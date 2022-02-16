@@ -4,19 +4,24 @@ With this code, we try to calculate the symbolic derivative, say
 `d(y*x)/dx = y`, with as simple means as possible, without using
 external libraries.
 
-Especially the `derivative` program requires the input to be math in reverse
-Polish notation (rpn), e.g.: `1 2 +` (for 1+2), but this notation does not need, nor
-allow parentheses. On unixy systems the `dc` program also works
-with this notation, so it may be familiar. 
+Especially the `derivative` program requires the input to be math in
+reverse Polish notation (rpn), e.g.: `1 2 +` (for 1+2); this notation
+does not *need*, nor *allow* parentheses. 
 
-RPN math is easier (*citation needed*) to process as there are no
-parentheses and evaluation follows a very simple algorithm.
+On unix-like systems the `dc` program works with this notation,
+so it may be familiar.
 
-The input expression must be balanced: `x y z +` has an unused
-operand, `x +` lacks an operand (`dc` would not care much about that,
-but balanced expressions make the code easier).
+RPN math is easier (*citation needed*) to process (at least for what
+we do here) as there are no parentheses and evaluation follows a very
+simple algorithm.
 
-An unbalanced expression produces an empty line in the output.
+The input expression must be *balanced*, unlike: `x y z +`, which has
+an unused operand, while `x +` lacks an operand (`dc` would not care
+much about the former and print a warning about the latter, but
+balanced expressions make the code easier).
+
+An unbalanced expression produces an empty line in the output of any
+program in this repository.
 
 Although it is of course possible to use `derivative` and `simplify`
 by themselves, you can also use `to_rpn` to convert more conventional
@@ -35,7 +40,7 @@ $ make test
 will create the binaries `derivative`, `simplify`, and `ll_test`; make test will run the tests in [test.sh](tests/test.sh).
 
 There is no `make install` at this stage of development, see
-[note][note.md] (also: no `man` pages yet).
+[note](note.md) (also: no `man` pages yet).
 
 ## Usage
 
