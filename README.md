@@ -185,20 +185,18 @@ Currently: `@exp, @log, @sin, @cos, @pow`.
 
 ## Limitations: Many
 
-Very few operator symbols and functions are and will ever be
+1. Very few operator symbols and functions are and will ever be
 supported. Notably, the _power(a,b)_ function is currently missing as
 are all logical opertors, bitwise operators and integer arithmetic
 (e.g. remainder/modulus).
+2. There are very few checks to see if the input is a _valid_ RPN expression.
+3. All variables must be one letter.
+4. Conversion back into infix notation writes too many parentheses. This is probably fine.
+5. Because `simplify` doesn't reduce fractions like `x y * x /` (`y`), some perfectly finite derivatives cannot be evaluated at _x=0_.
 
-There are very few checks to see if the input is a _valid_ RPN expression.
-
-All variables must be one letter.
-
-This will never become a scripting language like `dc`, with registers
+This tool-set will never become a scripting language like `dc`, with registers
 and user defined macros (or other things that are too hard for me to
 implement).
-
-Conversion back into infix notation writes too many parentheses. This is probably fine.
 
 ## Documentation
 
