@@ -4,8 +4,6 @@
 #include <assert.h>
 #include <string.h>
 #include "rpn.h"
-//#include "symbol.h"
-//#include "ll.h"
 
 struct ll* derivative(struct ll *pn, const char x);
 
