@@ -17,7 +17,7 @@ void help(char *name){
 	printf("[%s]\tUsage: %s < rpn.txt\n",__func__,name);
 	printf("\t%s will attempt to simplify a symbolic expression\n\tin reverse polish notation \n",name);
 	printf("\texample: $ echo 'x 0 *' | %s\n",name);
-	printf("\t         0\n");	
+	printf("\t         0\n");
 }
 
 /* base^p */
@@ -89,7 +89,7 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 		ll_cat(&res,simplify_pow(func,base,a));
 		break;
 	default:
-		fprintf(stderr,"[%s] unknown function «%i»\n",__func__,func->f);		
+		fprintf(stderr,"[%s] unknown function «%i»\n",__func__,func->f);
 	}
 	if (!res) {
 		ll_cat(&res,simplify(a));
@@ -151,7 +151,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_free(&a);
 			ll_free(&b);
 			ll_append(&res,symbol_allocd(0.0));
-		}
+		} 
 		break;
 	}
 	if(!res) {
