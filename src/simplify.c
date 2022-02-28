@@ -31,16 +31,21 @@ common_factor(
 	struct ll **ca, /* OUT: pointer to c in a */
 	struct ll **cb) /* OUT: pointer to c in b */
 {
+	int RET;
 	symbol *s;
 	struct ll *aa,*ab;
 	struct ll *ba,*bb;
 	int d;
+	
 	if (a){
 		s=a->value;
 		if (s->type=symbol_operator){
 			switch (s->name)
 			case '*':
-				
+				ab=a->next;
+				aa=???;
+				RET=
+				break;
 		}
 	}
 	}
