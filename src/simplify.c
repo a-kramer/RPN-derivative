@@ -20,6 +20,29 @@ void help(char *name){
 	printf("\t         0\n");
 }
 
+/* this function determines where the first operand to an operator
+ * ends. It assumes that operators come first (it is a reverse polish
+ * notation expression, but the linked list stores it as read from the
+ * back, so reversed reverse polish notation: `a b +` is stored as `'+'
+ * -> 'b' -> 'a'`. The input (in normal notation) `a b +` will return a
+ * pointer to a.
+ */
+struct ll* /* a pointer to the second operand */
+operand1(struct ll *pn) /* polish notation, kind of */
+{
+	assert(pn);
+	struct symbol *s=pn->value;
+	assert(s);
+	assert(s->type==symbol_operator);
+	pn=pn->next;
+	int d=depth(pn);
+	int i;
+	for (i=0;i<d;i++){
+		if (pn) pn=pn->next;
+	}
+	return pn;
+}
+
 /* this function tries to find a common factor c of a and b: a=c*x and
 	 b=c*y. It returns pointers to c, one pointer for c's location in a
 	 and one pointer for c's location in b. c, a and b are all
@@ -31,21 +54,24 @@ common_factor(
 	struct ll **ca, /* OUT: pointer to c in a */
 	struct ll **cb) /* OUT: pointer to c in b */
 {
-	int RET;
+	int RET=0;
 	symbol *s;
 	struct ll *aa,*ab;
 	struct ll *ba,*bb;
-	int d;
+	int da=depth(a);
+	int db=depth(b);
 	
 	if (a){
 		s=a->value;
 		if (s->type=symbol_operator){
+			ab=a->next;
+			aa=operand1(a);
 			switch (s->name)
 			case '*':
-				ab=a->next;
-				aa=???;
-				RET=
+				RET=common_factor(aa,b,ca,cb) || common_factor(ab,b,ca,cb);
 				break;
+			case '+':
+				RET=common_factor(aa,b,ca,cb) && common_factor(ab,b,ca,cb);
 		}
 	}
 	}
