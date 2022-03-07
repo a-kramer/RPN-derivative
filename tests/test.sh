@@ -77,7 +77,7 @@ test_string_eq "to_rpn '@exp(-1*a*t)'" "$RES" '-1 a * t * @exp'
 cat<<EOF 
 
 (2) compare to numerical solutions via 'dc'
-    `whch dc`
+    `which dc`
     math functions cannot be used
     only operators: * + - / ^
 

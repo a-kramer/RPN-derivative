@@ -19,4 +19,6 @@ struct ll* ll_copy(	struct ll *a,	size_t z);
 struct ll* ll_reverse(struct ll *a);
 void ll_free(struct ll **a);
 int ll_are_equal(struct ll *a, struct ll*b,  size_t value_size);
+int ll_start_equal(struct ll *a, struct ll *b, int n, size_t value_size);
+struct ll** ll_rm(struct ll **ac, struct ll *c, int n);
 #endif

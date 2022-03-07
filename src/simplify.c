@@ -46,7 +46,8 @@ operand1(struct ll *pn) /* polish notation, kind of */
 /* this function tries to find a common factor c of a and b: a=c*x and
 	 b=c*y. It returns pointers to c, one pointer for c's location in a
 	 and one pointer for c's location in b. c, a and b are all
-	 expressions (not necessarily numbers) */
+	 expressions (not necessarily numbers). If c exists in multiple
+	 powers, the first match is returned. */
 int /* returns 0 if no common factor was found */
 common_factor(
 	struct ll *a, /* input in polish notation */
@@ -55,26 +56,61 @@ common_factor(
 	struct ll **cb) /* OUT: pointer to c in b */
 {
 	int RET=0;
-	symbol *s;
+	struct symbol *s;
 	struct ll *aa,*ab;
 	struct ll *ba,*bb;
 	int da=depth(a);
 	int db=depth(b);
-	
-	if (a){
-		s=a->value;
-		if (s->type=symbol_operator){
-			ab=a->next;
-			aa=operand1(a);
-			switch (s->name)
-			case '*':
-				RET=common_factor(aa,b,ca,cb) || common_factor(ab,b,ca,cb);
-				break;
-			case '+':
-				RET=common_factor(aa,b,ca,cb) && common_factor(ab,b,ca,cb);
+	//printf("[%s] depth(a)=%i, depth(b)=%i\n",__func__,da,db);
+	//printf("a: "); rpn_print(a); putchar('\n');
+	//printf("b: "); rpn_print(b); putchar('\n');
+	if (a && b && ll_start_equal(a,b,da+1,sizeof(struct symbol))){
+		*ca=a;
+		*cb=b;
+		RET=1;
+	}	else {
+		if (a){
+			s=a->value;
+			if (s->type==symbol_operator){
+				ab=a->next;
+				aa=operand1(a);
+				switch (s->name){
+				case '*':
+					RET=common_factor(aa,b,ca,cb) || common_factor(ab,b,ca,cb);
+					break;
+				case '+':
+					/* same as '-' */
+					/* fall through */
+				case '-':
+					RET=common_factor(aa,b,ca,cb) && common_factor(ab,b,ca,cb);
+					break;
+				case '/':
+					RET=common_factor(aa,b,ca,cb);
+					break;
+				}		
+			}
+		}
+		if (b && !RET){
+			s=b->value;
+			if (s->type==symbol_operator){
+				bb=b->next;
+				ba=operand1(b);
+				switch (s->name){
+				case '*':
+					RET=common_factor(a,ba,ca,cb) || common_factor(a,bb,ca,cb);
+					break;
+				case '+':
+				case '-':
+					RET=common_factor(a,ba,ca,cb) && common_factor(a,bb,ca,cb);
+					break;
+				case '/':
+					RET=common_factor(a,ba,ca,cb);
+					break;
+				}
+			}
 		}
 	}
-	}
+	return RET;
 }
 
 /* base^p */
@@ -102,6 +138,7 @@ struct ll* simplify_pow(struct symbol *func, struct ll *base, struct ll *p)
 	}
 	return res;
 }
+
 
 struct ll* function_simplify(struct ll *a, struct symbol *func)
 {
@@ -165,6 +202,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	int a1=(da==0 && is_double(a->value,1.0));
 	int b0=(db==0 && is_double(b->value,0.0));
 	int b1=(db==0 && is_double(b->value,1.0));
+	struct ll *c, *ca, *cb; 
 	assert(op->type==symbol_operator);
 	switch(op->name){
 	case '+':
@@ -208,7 +246,10 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_free(&a);
 			ll_free(&b);
 			ll_append(&res,symbol_allocd(0.0));
-		}
+		} /* else if (common_factor(a,b,&ca,&cb)){
+			ll_push(ll_rm(&a,ca,depth(ca)+1),symbol_allocd(1.0));
+			ll_push(ll_rm(&b,cb,depth(cb)+1),symbol_allocd(1.0));
+			}*/
 		break;
 	}
 	if(!res) {

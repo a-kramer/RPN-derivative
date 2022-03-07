@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <ctype.h>
 
-enum symbol_type {symbol_number, symbol_var, symbol_operator, symbol_function};
+enum symbol_type {symbol_number, symbol_var, symbol_operator, symbol_function, symbol_NA};
 enum func {f_exp, f_log, f_sin, f_cos, f_pow, f_NA};
 
 

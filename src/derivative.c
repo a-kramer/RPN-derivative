@@ -166,6 +166,8 @@ struct ll* derivative(struct ll *pn, const char x){
 		case symbol_function:
 			ll_cat(&res,function_derivative(s,p,x));
 			break;
+		default:
+			break;
 		}
 	}
 	return res;

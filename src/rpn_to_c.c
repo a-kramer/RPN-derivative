@@ -66,6 +66,8 @@ write_code(struct ll *rpn)
 		case symbol_function:
 			print_function(s);
 			break;
+		default:
+			break;
 		}	
 	}
 	return k;

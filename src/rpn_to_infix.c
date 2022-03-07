@@ -5,6 +5,12 @@
 #include <string.h>
 #include "rpn.h"
 
+#define OPT_NONE 0
+#define OPT_SAFE_FRAC 1
+
+static int options=0;
+static double safety_val=1e-50; 
+
 void help(char *name){
 	assert(name);
 	printf("[%s]\tUsage: %s < rpn.txt\n",__func__,name);
@@ -24,7 +30,14 @@ void to_infix(struct ll *pn){
 			printf("(");
 			to_infix(a);
 			printf("%c",s->name);
-			to_infix(b);
+			if (options&OPT_SAFE_FRAC && s->name=='/'){
+				putchar('(');
+				printf("%g + ",safety_val);
+				to_infix(b);
+				putchar(')');
+			} else {
+				to_infix(b);
+			}
 			printf(")");
 			break;
 		case symbol_function:
@@ -56,7 +69,24 @@ int main(int argc, char *argv[]){
 	ssize_t m=0;
 	const char delim[]=" ";
 	struct ll *r=NULL;
-
+	char *opt;
+	char *val;
+	int i;
+	for (i=1;i<argc;i++){
+		opt=argv[i];
+		val=strchr(argv[i],'=');
+		if (val) {
+			val='\0';
+			val++;
+		}		
+		if (strcmp("-s",opt)==0){
+			options|=OPT_SAFE_FRAC;
+		} else if (val && strcmp("--safe-frac",argv[i])){
+			options|=OPT_SAFE_FRAC;
+			safety_val=strtod(val,NULL);
+		}
+	}
+	
 	do{
 		m=getline(&rpn,&n,stdin);
 		//printf("[%s] line: %s (%li characters)\n",__func__,rpn,m);

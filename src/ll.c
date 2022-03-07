@@ -190,6 +190,53 @@ ll_are_equal
 	return (E && a==b);
 }
 
+/* This function will check whether two lists `a` and `b` have
+ * identical values in thefirst n places (using memcmp on each pair of
+ * elements). Similar to `ll_are_equal()`.
+ */
+int /* returns an integer truth value */
+ll_start_equal
+(struct ll *a, /* first list */
+ struct ll *b, /* second list */
+ int n, /* equality up to n elements */
+ size_t value_size) /* sizeof(a->value) */
+{
+	int E=1;
+	while (a && b && n-- > 0){
+		E=E && (memcmp(a->value,b->value,value_size)==0);
+		a=a->next;
+		b=b->next;
+	}
+	return (E);
+}
+
+
+/* removes and frees sub-list c of size n from list ac, returns an
+ * address to the pointer that used to point to c (e.g. a 'next'
+ * pointer's address).
+ */
+struct ll** /* either ac or the address of a next pointer, where c used to be */
+ll_rm(
+	struct ll **ac, /* address of the HEAD pointer of a linked list */
+	struct ll *c, /* pointer to a sub-list */
+	int n) /* size of sub-list (elements) */
+{
+	struct ll **tmp=ac;
+	struct ll *cf;
+  while (*tmp && *tmp!=c){
+		tmp=&((*tmp)->next);
+	}
+	while (c && n--){
+		free(c->value);
+		cf=c;
+		c=c->next;
+		free(cf);
+	}
+	*tmp=c;
+	return tmp;
+}
+
+
 
 /* traverses the list once to find the length */
 int /* the length of linked list `a` */

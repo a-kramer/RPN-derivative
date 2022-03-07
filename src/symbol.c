@@ -114,6 +114,8 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 	case symbol_function:
 		printf("@%s",fname[s->f]);
 		break;
+	default:
+		putchar(' ');
 	}
 }
 
