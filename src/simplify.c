@@ -9,6 +9,7 @@
 
 #define NARGS(ll) ((ll)?(((struct symbol *)((ll)->value))->nargs):0)
 #define IS_NUMBER(ll) (((struct symbol *)((ll)->value))->type == symbol_number)
+#define _n putchar('\n')
 
 struct ll* simplify(struct ll *stack);
 
@@ -18,6 +19,17 @@ void help(char *name){
 	printf("\t%s will attempt to simplify a symbolic expression\n\tin reverse polish notation \n",name);
 	printf("\texample: $ echo 'x 0 *' | %s\n",name);
 	printf("\t         0\n");
+}
+
+/* prints up tp depth(c)+1 items */
+void pn_print(struct ll *c){
+	int n=depth(c)+1;
+	while (c && n-->0){
+		symbol_print(c->value);
+		putchar(' ');
+		c=c->next;
+	}
+	_n;
 }
 
 /* this function determines where the first operand to an operator
@@ -32,13 +44,11 @@ operand1(struct ll *pn) /* polish notation, kind of */
 {
 	assert(pn);
 	struct symbol *s=pn->value;
-	assert(s);
-	assert(s->type==symbol_operator);
+	assert(s && s->type==symbol_operator);
 	pn=pn->next;
-	int d=depth(pn);
-	int i;
-	for (i=0;i<d;i++){
-		if (pn) pn=pn->next;
+	int d=depth(pn)+1;
+	while (pn && d-->0){
+		pn=pn->next;
 	}
 	return pn;
 }
@@ -61,10 +71,15 @@ common_factor(
 	struct ll *ba,*bb;
 	int da=depth(a);
 	int db=depth(b);
-	//printf("[%s] depth(a)=%i, depth(b)=%i\n",__func__,da,db);
-	//printf("a: "); rpn_print(a); putchar('\n');
-	//printf("b: "); rpn_print(b); putchar('\n');
-	if (a && b && ll_start_equal(a,b,da+1,sizeof(struct symbol))){
+	/*
+	printf("[%s] depth(a)=%i, depth(b)=%i\n",__func__,da,db);
+	printf("a: "); pn_print(a);
+	printf("b: "); pn_print(b);
+	*/
+	const size_t symsize=sizeof(struct symbol);
+	char ha=ll_hash(a,symsize,da);
+	char hb=ll_hash(b,symsize,db);
+	if (a && b && da==db && ha==hb && ll_start_equal(a,b,da+1,symsize)){
 		*ca=a;
 		*cb=b;
 		RET=1;
@@ -100,6 +115,8 @@ common_factor(
 					RET=common_factor(a,ba,ca,cb) || common_factor(a,bb,ca,cb);
 					break;
 				case '+':
+					/* same as '-' */
+					/* fall through */
 				case '-':
 					RET=common_factor(a,ba,ca,cb) && common_factor(a,bb,ca,cb);
 					break;
@@ -179,7 +196,7 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 		break;
 	case f_pow:
 		/* base^p*/
-		base=ll_cut(a,depth(a));
+		base=ll_cut(a,depth(a)+1);
 		ll_cat(&res,simplify_pow(func,base,a));
 		break;
 	default:
@@ -192,6 +209,7 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 	return res;
 }
 
+
 struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 {
 	struct ll* res=NULL;
@@ -202,7 +220,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	int a1=(da==0 && is_double(a->value,1.0));
 	int b0=(db==0 && is_double(b->value,0.0));
 	int b1=(db==0 && is_double(b->value,1.0));
-	struct ll *c, *ca, *cb; 
+	struct ll *ca=NULL, *cb=NULL; 
 	assert(op->type==symbol_operator);
 	switch(op->name){
 	case '+':
@@ -246,10 +264,12 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_free(&a);
 			ll_free(&b);
 			ll_append(&res,symbol_allocd(0.0));
-		} /* else if (common_factor(a,b,&ca,&cb)){
+		} else if (common_factor(a,b,&ca,&cb)){
+			/* printf("common factor: "); */
+			/* pn_print(ca);  */
 			ll_push(ll_rm(&a,ca,depth(ca)+1),symbol_allocd(1.0));
 			ll_push(ll_rm(&b,cb,depth(cb)+1),symbol_allocd(1.0));
-			}*/
+			}	
 		break;
 	}
 	if(!res) {
@@ -273,8 +293,8 @@ struct ll* simplify(struct ll *stack){
 		switch(s->type){
 		case symbol_operator:
 			b=stack;
-			a=ll_cut(b,depth(b));
-			stack=ll_cut(a,depth(a));
+			a=ll_cut(b,depth(b)+1);
+			stack=ll_cut(a,depth(a)+1);
 			ll_cat(&res,basic_op_simplify(a,b,s));
 			break;
 		case symbol_function:

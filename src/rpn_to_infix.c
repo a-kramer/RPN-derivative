@@ -3,13 +3,14 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#include <float.h>
 #include "rpn.h"
 
 #define OPT_NONE 0
 #define OPT_SAFE_FRAC 1
 
-static int options=0;
-static double safety_val=1e-50; 
+static int options=OPT_NONE;
+static double safety_val=DBL_MIN; 
 
 void help(char *name){
 	assert(name);
@@ -26,7 +27,7 @@ void to_infix(struct ll *pn){
 		switch (s->type){
 		case symbol_operator:
 			b=pn;
-			a=ll_cut(b,depth(b));
+			a=ll_cut(b,depth(b)+1);
 			printf("(");
 			to_infix(a);
 			printf("%c",s->name);
@@ -43,7 +44,7 @@ void to_infix(struct ll *pn){
 		case symbol_function:
 			if (s->f == f_pow){
 				b=pn;
-				a=ll_cut(b,depth(b));
+				a=ll_cut(b,depth(b)+1);
 				printf("pow(");
 				to_infix(a);
 				putchar(',');
@@ -70,20 +71,23 @@ int main(int argc, char *argv[]){
 	const char delim[]=" ";
 	struct ll *r=NULL;
 	char *opt;
+	size_t l;
 	char *val;
+	double d;
 	int i;
 	for (i=1;i<argc;i++){
 		opt=argv[i];
-		val=strchr(argv[i],'=');
+		l=strlen(opt);
+		val=strchr(opt,'=');
 		if (val) {
-			val='\0';
 			val++;
-		}		
+		}
 		if (strcmp("-s",opt)==0){
 			options|=OPT_SAFE_FRAC;
-		} else if (val && strcmp("--safe-frac",argv[i])){
+		} else if (val && memcmp("--safe-frac",opt,l<11?l:11)==0){
 			options|=OPT_SAFE_FRAC;
-			safety_val=strtod(val,NULL);
+			d=strtod(val,NULL);
+			if (d>0) safety_val=d;
 		}
 	}
 	

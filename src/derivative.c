@@ -62,7 +62,7 @@ struct ll* function_derivative(struct symbol *fun, struct ll *a, char x){
 		/* pow(base,power)*/
 		a_rev=rpn_reverse_copy(a);
 		p=a; /* power */
-		base=ll_cut(p,depth(p));
+		base=ll_cut(p,depth(p)+1);
 		/* needed copies */
 		p_rev=rpn_reverse_copy(p);
 		//p_rev2=rpn_reverse_copy(p);
@@ -160,7 +160,7 @@ struct ll* derivative(struct ll *pn, const char x){
 			break;
 		case symbol_operator:
 			b=p;
-			a=ll_cut(b,depth(b));
+			a=ll_cut(b,depth(b)+1);
 			ll_cat(&res,basic_op_derivative(s,a,b,x));
 			break;
 		case symbol_function:

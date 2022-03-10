@@ -81,9 +81,7 @@ ll_cut(
 {
 	struct ll *p=a;
 	struct ll *b=NULL;
-	int i;
-  for (i=0 ; i<k && p; i++){
-		assert(p);
+  while (p && --k>0){
 		p=p->next;
 	}
 	if (p) {
@@ -165,6 +163,19 @@ void ll_free(struct ll **a) /* the linked list to clear. */
 	}
 }
 
+/* In contrast to `ll_free()`, this function just destroys the linked
+ * list, without freeing the values.
+ */
+void ll_clear(struct ll **a) /* the linked list to clear. */
+{
+	struct ll *t;
+	while(*a){
+		t=*a;
+		*a=(*a)->next;
+		free(t);
+	}
+}
+
 /* This function will check whether two lists `a` and `b` have
  * identical values (using memcmp on each pair of elements). Both
  * pointers will be used to traverse the lists and should be both NULL
@@ -223,7 +234,7 @@ ll_rm(
 {
 	struct ll **tmp=ac;
 	struct ll *cf;
-  while (*tmp && *tmp!=c){
+  while (*tmp && (*tmp)!=c){
 		tmp=&((*tmp)->next);
 	}
 	while (c && n--){
@@ -236,8 +247,6 @@ ll_rm(
 	return tmp;
 }
 
-
-
 /* traverses the list once to find the length */
 int /* the length of linked list `a` */
 ll_length(struct ll *a) /* linked list, `NULL` is ok */
@@ -248,4 +257,30 @@ ll_length(struct ll *a) /* linked list, `NULL` is ok */
 		a=a->next;
 	}
 	return k;
+}
+
+/* `ll_hash()` tries to calculate a char sized hash for `n` elements
+ * in linked list `a` (or, if `n<0` for all elements). The elements
+ * need to be flat (no pointers to other heap memory). The xor
+ * operator is used for hash calculations. This may be useful to
+ * compare lists (hash collisions could happen). This works only if
+ * the values are of homogenious size (which is of course not generally
+ * the case withlinked lists, use ll_are_equal in such cases).
+ */
+char /* calculated hash (`^`)*/
+ll_hash(
+	struct ll *a, /* linked list */
+	size_t vsize, /* byte size of values `sizeof(a->value)`*/
+	int n) /* number of elements in `a` to hash */
+{
+	char h=0;
+	char *v;
+	int i;
+	while (a && (n--) != 0){
+		v=a->value;
+		h=v[0];
+		for (i=1;i<vsize;i++) h^=v[i];
+		a=a->next;
+	}
+	return h;
 }
