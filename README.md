@@ -115,7 +115,9 @@ $ echo "x 0 0 + +" | simplify 2
 x
 ```
 
-Simplify tries to reduce fractions by finding common factors.
+Simplify tries to reduce fractions by finding common factors. If a
+common factor is found within a sum, it will be factored out. Not all
+obvious common factors are detected.
 
 #### Note
 
@@ -158,18 +160,44 @@ converted back into infix notation like this:
 $ bin/to_infix < rpn_math.txt
 ```
 
-Like all other programs in this repository, it reads from standard input and writes to
-standard output.
+#### Optional parameters 
 
-An example:
+`-s` (safe fractions)
+`--safe-fractions=1e-10`
+
+This option is useful when denominators are known to be
+non-negative. It will add a small safety constant to denominators to
+prevent division by zero. This could of course be wrong. It is a
+safety measure for cases where reduction of fractions didn't work:
+
+```
+x*x/x
+```
+
+is a perfectly fine fraction that cannot be naïvely evaluated
+numerically, it has to be reduced to `x`. But,
+
+```
+x*x/(1e-16 + x)
+```
+
+would work numerically without smart fraction reduction. By default
+the safety constant is the smallest positive double precision floating
+point value.
+
+#### Example
+
+Like all other programs in this repository, `to_infix` reads from standard input and writes to
+standard output.
 
 ```bash
 $ echo "@pow(t,3)" | to_rpn | derivative t | simplify 4 | to_infix
 (pow(t,3)*(3/t))
 ```
 
-There will be many superfluous parentheses. The `@` symbol will be
-stripped from functions to make it easier to use the expressions
+There will be many superfluous parentheses to produce safe expressions
+(they can be used as sub-expressions). The `@` symbol will
+be stripped from functions to make it easier to use the expressions
 elsewhere.
 
 ## Mathematical Functions
@@ -189,13 +217,12 @@ Currently: `@exp, @log, @sin, @cos, @pow`.
 ## Limitations: Many
 
 1. Very few operator symbols and functions are and will ever be
-supported. Notably, the _power(a,b)_ function is currently missing as
-are all logical opertors, bitwise operators and integer arithmetic
-(e.g. remainder/modulus).
+supported. All logical opertors are missing, bitwise operators and integer arithmetic
+(e.g. remainder/modulus) as they are difficult to differentiate.
 2. There are very few checks to see if the input is a _valid_ RPN expression.
 3. All variables must be one letter.
-4. Conversion back into infix notation writes too many parentheses. This is probably fine.
-5. Because `simplify` doesn't reduce fractions like `x y * x /` (`y`), some perfectly finite derivatives cannot be evaluated at _x=0_.
+4. Conversion back into infix notation writes many parentheses; this is probably fine.
+5. Because `simplify` doesn't reliably reduce all fractions, some perfectly finite derivatives cannot be evaluated at _x=0_.
 
 This tool-set will never become a scripting language like `dc`, with registers
 and user defined macros (or other things that are too hard for me to
