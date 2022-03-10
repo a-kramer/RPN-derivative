@@ -23,6 +23,8 @@ struct symbol* symbol_alloc(char *s);
 struct symbol* symbol_alloc_op(char op);
 void symbol_print(struct symbol *s);
 int is_double(struct symbol *s, double y);
+int symbol_cmpd(struct symbol *s, double y);
+int is_numeric(struct symbol *s);
 int is_equal(struct symbol *a, struct symbol *b);
 const char* function_name(enum func f);
 #endif

@@ -75,7 +75,8 @@ the operation _minus(1,2)_, `a-b` works perfectly fine because `b` is
 not a valid number. 
 
 The `dc` program resolves this ambiguity by using the underscore to
-denote negative numbers: `dc -e '_1 1 + p'` prints 0 (we don't do that).
+denote negative numbers: `dc -e '_1 1 + p'` prints 0; but, we don't do that
+underscore thing.
 
 The output consists of space separated rpn expressions, so no mixups
 of this sort are likely to happen downstream.
@@ -113,6 +114,8 @@ x
 $ echo "x 0 0 + +" | simplify 2
 x
 ```
+
+Simplify tries to reduce fractions by finding common factors.
 
 #### Note
 

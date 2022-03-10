@@ -124,6 +124,17 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
  * `(1e-15)+(1e-15)*|y|`. So, the equality is approximated.
  */
 int /* truth value */
+is_numeric(struct symbol *s) /* the symbol to check */
+{
+	return (s && s->type==symbol_number);
+}
+
+
+/* This function checks whether the symbol is a number and equal to
+ * the given value within double precision rounding errors
+ * `(1e-15)+(1e-15)*|y|`. So, the equality is approximated.
+ */
+int /* truth value */
 is_double(
 	struct symbol *s, /* the symbol to check for approximate equality */
 	double y) /* the value to compare against */
@@ -136,6 +147,25 @@ is_double(
 	}
 	return z;
 }
+
+/* This function checks whether the symbol is a number and equal to
+ * the given value within double precision rounding errors
+ * `(1e-15)+(1e-15)*|y|`. So, the equality is approximated.
+ */
+int /* truth value */
+symbol_cmpd(
+	struct symbol *s, /* the symbol to check for approximate equality */
+	double y) /* the value to compare against */
+{
+	int z=0; /* false */
+	double v;
+	if(s && s->type==symbol_number){
+		v=s->value - y;
+	  z=((v<0?-v:v) < 1e-15 + 1e-15*(y<0?-y:y));
+	}
+	return z;
+}
+
 
 /* This function tests whether two symbols are equal. It uses
  * `memcmp()`, so the equality must be exact, but it works regardless
