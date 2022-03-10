@@ -293,7 +293,10 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 		} else if (common_factor(a,b,&ca,&cb)){
 			ll_push(ll_rm(&a,ca,depth(ca)+1),symbol_allocd(1.0));
 			ll_push(ll_rm(&b,cb,depth(cb)+1),symbol_allocd(1.0));
-			}	
+		} else if (b1) {
+			ll_free(&b);
+			ll_cat(&res,simplify(a));
+		}	
 		break;
 	}
 	if(!res) {
