@@ -39,6 +39,10 @@ $ make test
 
 will create the binaries `derivative`, `simplify`, and `ll_test`; make test will run the tests in [test.sh](tests/test.sh).
 
+The [symbol](src/symbol.h) component takes a macro that fixes the
+maximum length of variable names: `MAX_NAME_SIZE`. It can be defined o
+the command line: `-DMAX_NAME_SIZE=10`.
+
 There is no `make install` at this stage of development, see
 [note](note.md) (also: no `man` pages yet).
 
@@ -220,7 +224,7 @@ Currently: `@exp, @log, @sin, @cos, @pow`.
 supported. All logical opertors are missing, bitwise operators and integer arithmetic
 (e.g. remainder/modulus) as they are difficult to differentiate.
 2. There are very few checks to see if the input is a _valid_ RPN expression.
-3. All variables must be one letter.
+3. ~All variables must be one letter~ the maximum length of variables can be set at compile time. 
 4. Conversion back into infix notation writes many parentheses; this is probably fine.
 5. Because `simplify` doesn't reliably reduce all fractions, some perfectly finite derivatives cannot be evaluated at _x=0_.
 
