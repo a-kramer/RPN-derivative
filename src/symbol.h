@@ -4,6 +4,10 @@
 #include <assert.h>
 #include <ctype.h>
 
+#ifndef MAX_NAME_SIZE
+#define MAX_NAME_SIZE 12
+#endif
+
 enum symbol_type {symbol_number, symbol_var, symbol_operator, symbol_function, symbol_NA};
 enum func {f_exp, f_log, f_sin, f_cos, f_pow, f_NA};
 
@@ -11,7 +15,8 @@ enum func {f_exp, f_log, f_sin, f_cos, f_pow, f_NA};
 struct symbol {
 	enum symbol_type type;
 	union{
-		char name;
+		char op;
+		char name[MAX_NAME_SIZE];
 		double value;
 		enum func f;
 	};

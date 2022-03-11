@@ -19,7 +19,7 @@ void print_push(struct symbol *s)
 		printf("\tstack[n++]=%g;\n",s->value);
 		break;
 	case symbol_var:
-		printf("\tstack[n++]=%c;\n",s->name);
+		printf("\tstack[n++]=%s;\n",s->name);
 		break;
 	default:
 		printf("/* symbol is neither number nor variable */\n");
@@ -61,7 +61,7 @@ write_code(struct ll *rpn)
 			k++;
 			break;
 		case symbol_operator:
-			print_op(s->name);
+			print_op(s->op);
 			break;
 		case symbol_function:
 			print_function(s);

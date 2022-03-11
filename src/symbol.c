@@ -43,7 +43,7 @@ struct symbol* symbol_alloc_op(char op)
 	assert(n);
 	assert(op!='\0' && strchr("+-*/",op));
 	n->type=symbol_operator;
-	n->name=op;
+	n->op=op;
 	n->nargs=0;
 	return n;
 }
@@ -64,13 +64,16 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	size_t len=strlen(s);
 	char *p;
 	char c=s[0];
+	size_t z=MAX_NAME_SIZE-1;
+	z=(len>z)?z:len;
+	
 	p=s;
 	double d=strtod(s,&p);
 	/* fprintf(stderr,"length(%s)=«%li»\n",s,len); */
 	if (s==p){
     if (len==1 && strchr("+-*/^",c)){
 			n->type=symbol_operator;
-			n->name=c;
+			n->op=c;
 			n->nargs=2;
 		} else if(c=='@') {
 			n->type=symbol_function;
@@ -78,7 +81,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 			n->nargs=fnargs[n->f];
 		} else if (isalpha(c)){
 			n->type=symbol_var;
-			n->name=c;
+			*((char*) memcpy(n->name,s,z)+z)='\0';
 			n->nargs=0;
 		} else {
 			fprintf(stderr,"[%s] unexpected case «%s».\n",__func__,s);
@@ -106,10 +109,10 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 		printf("%g",s->value);
 		break;
 	case symbol_var:
-		printf("%c",s->name);
+		printf("%s",s->name);
 		break;
 	case symbol_operator:
-		printf("%c",s->name);
+		printf("%c",s->op);
 		break;
 	case symbol_function:
 		printf("@%s",fname[s->f]);

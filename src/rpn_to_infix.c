@@ -30,8 +30,8 @@ void to_infix(struct ll *pn){
 			a=ll_cut(b,depth(b)+1);
 			printf("(");
 			to_infix(a);
-			printf("%c",s->name);
-			if (options&OPT_SAFE_FRAC && s->name=='/'){
+			printf("%c",s->op);
+			if (options&OPT_SAFE_FRAC && s->op=='/'){
 				putchar('(');
 				printf("%g + ",safety_val);
 				to_infix(b);

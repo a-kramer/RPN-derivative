@@ -101,7 +101,7 @@ common_factor(
 			if (s->type==symbol_operator){
 				ab=a->next;
 				aa=operand1(a);
-				switch (s->name){
+				switch (s->op){
 				case '*':
 					RET=common_factor(aa,b,ca,cb) || common_factor(ab,b,ca,cb);
 					break;
@@ -116,7 +116,7 @@ common_factor(
 			if (s->type==symbol_operator){
 				bb=b->next;
 				ba=operand1(b);
-				switch (s->name){
+				switch (s->op){
 				case '*':
 					RET=common_factor(a,ba,ca,cb) || common_factor(a,bb,ca,cb);
 					break;
@@ -210,7 +210,7 @@ struct ll* function_simplify(struct ll *a, struct symbol *func)
 }
 
 
-struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
+struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *s)
 {
 	struct ll* res=NULL;
 	size_t sym_size=sizeof(struct symbol);
@@ -221,8 +221,8 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	int b0=(db==0 && is_double(b->value,0.0));
 	int b1=(db==0 && is_double(b->value,1.0));
 	struct ll *c=NULL, *ca=NULL, *cb=NULL; 
-	assert(op->type==symbol_operator);
-	switch(op->name){
+	assert(s->type==symbol_operator);
+	switch(s->op){
 	case '+':
 		if (a0){
 			ll_free(&a);
@@ -235,8 +235,8 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_cat(&res,c);
 			ll_push(ll_rm(&a,ca,depth(ca)+1),symbol_allocd(1.0));
 			ll_push(ll_rm(&b,cb,depth(cb)+1),symbol_allocd(1.0));
-			ll_cat(&res,a);
-			ll_cat(&res,b);
+			ll_cat(&res,simplify(a));
+			ll_cat(&res,simplify(b));
 			ll_append(&res,symbol_alloc("+"));
 			ll_append(&res,symbol_alloc("*"));
 		} else if (is_numeric(a->value) && is_numeric(b->value)){
@@ -258,8 +258,8 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 			ll_cat(&res,c);
 			ll_push(ll_rm(&a,ca,depth(ca)+1),symbol_allocd(1.0));
 			ll_push(ll_rm(&b,cb,depth(cb)+1),symbol_allocd(1.0));
-			ll_cat(&res,a);
-			ll_cat(&res,b);
+			ll_cat(&res,simplify(a));
+			ll_cat(&res,simplify(b));
 			ll_append(&res,symbol_alloc("-"));
 			ll_append(&res,symbol_alloc("*"));
 		} else if (is_numeric(a->value) && is_numeric(b->value)){
@@ -302,7 +302,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *op)
 	if(!res) {
  		ll_cat(&res,simplify(a));
  		ll_cat(&res,simplify(b));
- 		ll_append(&res,op);
+ 		ll_append(&res,s);
 	}
 	return res;
 }
