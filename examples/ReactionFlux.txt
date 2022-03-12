@@ -1,0 +1,4 @@
+u * kf_R0 * A * B - kr_R0 * AB
+kf_R1 * A * C - kr_R1 * AC
+kf_R2 * AB * C - kr_R2 * ABC
+kf_R3 * AC * B - kr_R3 * ABC

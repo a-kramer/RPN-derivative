@@ -1,0 +1,17 @@
+kf_R0
+kr_R0
+kf_R1
+kr_R1
+kf_R2
+kr_R2
+kf_R3
+kr_R3
+kf_R4
+kr_R4
+kf_R5
+kr_R5
+u
+t_on
+C_ConservedConst
+B_ConservedConst
+A_ConservedConst
