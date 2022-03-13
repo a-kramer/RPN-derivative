@@ -18,7 +18,7 @@ $ ./ode.sh > DemoModel_gvf.c
 ## Reactions
 
 The model represents the change in concentration of three substances
-in a well mixed homogenious container. The reaction formulae are:
+in a well mixed homogeneous container. The reaction formulae are:
 
 ```
 A + B <=> AB
@@ -33,14 +33,14 @@ of constituents, e.g. `ABC` contains `A`, `B`, and `C` bound into one
 molecule. The `+` signs above are symbolic and mean something like
 _react together_.
 
-Each word potentially corrsponds to a state variable, unless some
+Each word potentially corresponds to a state variable, unless some
 method of model reduction is used before writing the ODE. 
 
-The values of the state variables are the concentartions of the
+The values of the state variables are the concentrations of the
 reacting molecules. We will no distinguish between the molecule symbol
 `A` and the symbol of the state variable `A` as they represent aspects
 of the same entity (sometimes authors make the choice that `A` is the
-name of the molecule and `[A]` is it's concentartion).
+name of the molecule and `[A]` is it's concentration).
 
 Each direction of a reaction corresponds to a reaction flux, informed
 by a reaction kinetic (e.g. the law of mass action).
@@ -58,7 +58,7 @@ names, one per line.
 
 ## Jacobian Files
 
-The [ode.sh](ode.sh) script writes the columns of the Jacobina matrix
+The [ode.sh](ode.sh) script writes the columns of the Jacobian matrix
 into files named `Jac_%i.txt` where the placeholder `%i` corresponds
 to the column number.
 
@@ -68,7 +68,7 @@ line 2 (here all numbering starts with 1).
 ### Fluxes and their derivatives
 
 To create the Jacobian files, the ode script first creates the
-_reaction flux_ derivatives, named `Flux_${sv}.txtx` where `$sv` is
+_reaction flux_ derivatives, named `Flux_${sv}.txt` where `$sv` is
 any of the state variables, so `d(ReactionFlux0(t,y))/dC` can be found
 in file [Flux_C.txt](Flux_C.txt) on line 1.
 
