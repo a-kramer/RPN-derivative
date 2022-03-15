@@ -1,0 +1,3 @@
+A+AB+AC+ABC
+B+AB+ABC
+C+AC+ABC

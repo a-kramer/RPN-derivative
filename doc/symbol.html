@@ -185,16 +185,31 @@ h2.title, h3.title {
 <h2 class="title">Contents</h2>
 <ul class="contents">
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
+<li><a href="#function_name">function_name</a></li>
 <li><a href="#is_double">is_double</a></li>
 <li><a href="#is_equal">is_equal</a></li>
+<li><a href="#is_numeric">is_numeric</a></li>
 <li><a href="#symbol_alloc">symbol_alloc</a></li>
+<li><a href="#symbol_alloc_op">symbol_alloc_op</a></li>
 <li><a href="#symbol_allocd">symbol_allocd</a></li>
+<li><a href="#symbol_cmpd">symbol_cmpd</a></li>
 <li><a href="#symbol_print">symbol_print</a></li>
 </ul></li>
 </ul>
 </div>
 <div class="body">
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
+<h3 class="function"><a id="function_name">function_name</a></h3>
+<p class="description">Given a function enumerator, this return's the function's name</p>
+<p class="code">
+const char *function_name(enum func f);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>f</th>
+<td class="description">one of the known function enum values</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">pointer to the right entry in a global array of strings</p>
 <h3 class="function"><a id="is_double">is_double</a></h3>
 <p class="description">This function checks whether the symbol is a number and equal to
 the given value within double precision rounding errors
@@ -211,7 +226,7 @@ int is_double(struct symbol *s, double y);</p>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">truth value</p>
 <h3 class="function"><a id="is_equal">is_equal</a></h3>
-<p class="description">This function tests whether two symbols are equal. It uses
+<p class="description">This function tests whether <code>a</code> is equal to <code>b</code>. It uses
 <code>memcmp()</code>, so the equality must be exact, but it works regardless
 of the symbol's type. Two non-existent symbols are considered
 equal, as in: <code>(NULL==NULL)</code>, simlarly <code>is_equal(a,a)</code> is true.</p>
@@ -226,6 +241,17 @@ int is_equal(struct symbol *a, struct symbol *b);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">truth value</p>
+<h3 class="function"><a id="is_numeric">is_numeric</a></h3>
+<p class="description">This function checks whether the symbol is a number (at all).</p>
+<p class="code">
+int is_numeric(struct symbol *s);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>s</th>
+<td class="description">the symbol to check</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">truth value (the normal kind)</p>
 <h3 class="function"><a id="symbol_alloc">symbol_alloc</a></h3>
 <p class="description">This is the more flexible allocation function and can create all
 kinds of symbols: numbers, variables, operators and functions. The
@@ -242,6 +268,17 @@ struct symbol *symbol_alloc(char *s);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">a pointer to the allocated memory for the new symbol</p>
+<h3 class="function"><a id="symbol_alloc_op">symbol_alloc_op</a></h3>
+<p class="description"></p>
+<p class="code">
+struct symbol *symbol_alloc_op(char op);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>op</th>
+</tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"></p>
 <h3 class="function"><a id="symbol_allocd">symbol_allocd</a></h3>
 <p class="description">This function allocates memory for a new symbol and uses the value of <code>d</code> to initialize.</p>
 <p class="code">
@@ -253,6 +290,33 @@ struct symbol *symbol_allocd(double d);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">a symbol of type <code>symbol_number</code> with value <code>d</code></p>
+<h3 class="function"><a id="symbol_cmpd">symbol_cmpd</a></h3>
+<p class="description">This function compares the symbol to <code>y</code> and returns 
+<pre>
+| case |value|
+|------|-----|
+|  s&gt;y |  1  |
+|  s&lt;y | -1  |
+|  s=y |  0  |
+|other | -2  |    
+```</pre>
+
+If the symbol isn't a number an error code is
+returned (not -1, 0, 1).</p>
+<p class="code">
+int symbol_cmpd(struct symbol *s, double y);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>s</th>
+<td class="description">the symbol to check for approximate equality</td></tr>
+<tr><th>y</th>
+<td class="description">the value to compare against</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">comparison result</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">If the symbol isn't a number an error code is
+returned (not -1, 0, 1).</p>
 <h3 class="function"><a id="symbol_print">symbol_print</a></h3>
 <p class="description">This function prints a representation of the symbol, as appropriate
 for the type.</p>

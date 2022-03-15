@@ -186,11 +186,16 @@ h2.title, h3.title {
 <ul class="contents">
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
 <li><a href="#ll_append">ll_append</a></li>
+<li><a href="#ll_clear">ll_clear</a></li>
+<li><a href="#ll_copy">ll_copy</a></li>
+<li><a href="#ll_cut">ll_cut</a></li>
 <li><a href="#ll_free">ll_free</a></li>
+<li><a href="#ll_hash">ll_hash</a></li>
 <li><a href="#ll_length">ll_length</a></li>
 <li><a href="#ll_pop">ll_pop</a></li>
 <li><a href="#ll_remove">ll_remove</a></li>
 <li><a href="#ll_reverse">ll_reverse</a></li>
+<li><a href="#ll_rm">ll_rm</a></li>
 </ul></li>
 </ul>
 </div>
@@ -210,6 +215,44 @@ void ll_append(struct ll **a, void *e);</p>
 <tr><th>e</th>
 <td class="description">new element</td></tr>
 </tbody></table>
+<h3 class="function"><a id="ll_clear">ll_clear</a></h3>
+<p class="description">In contrast to <code>ll_free()</code>, this function just destroys the linked
+list, without freeing the values.</p>
+<p class="code">
+void ll_clear(struct ll **a);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">the linked list to clear.</td></tr>
+</tbody></table>
+<h3 class="function"><a id="ll_copy">ll_copy</a></h3>
+<p class="description">This copies linked list <code>a</code>, including the stored values, via
+<code>memcpy()</code>. The elements must not contain pointers to more
+allocated memory, this is not a deep/nested copy.</p>
+<p class="code">
+struct ll *ll_copy(struct ll *a, size_t z);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">list to copy</td></tr>
+<tr><th>z</th>
+<td class="description">size of the elements as reported by <code>sizeof()</code></td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">a new list, with heap allocated memory</p>
+<h3 class="function"><a id="ll_cut">ll_cut</a></h3>
+<p class="description">given a list <code>a</code> and a length <code>k</code>, <code>ll_cut</code> will sever the list's connection after <code>k</code> elements and divide the list in two, <code>a</code> will continue pointing to the first <code>k</code> elements. (no allocations)</p>
+<p class="code">
+struct ll *ll_cut(struct ll *a, int k);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">list to cut</td></tr>
+<tr><th>k</th>
+<td class="description">steps taken from before cutting.</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">the remainder of the list (tail)</p>
 <h3 class="function"><a id="ll_free">ll_free</a></h3>
 <p class="description">This function assumes that all stored values can be freed using
 <code>free(a-&gt;value)</code> (i.e. the value entry cannot have pointers in it,
@@ -224,6 +267,27 @@ void ll_free(struct ll **a);</p>
 <tr><th>a</th>
 <td class="description">the linked list to clear.</td></tr>
 </tbody></table>
+<h3 class="function"><a id="ll_hash">ll_hash</a></h3>
+<p class="description"><code>ll_hash()</code> tries to calculate a char sized hash for <code>n</code> elements
+in linked list <code>a</code> (or, if <code>n&lt;0</code> for all elements). The elements
+need to be flat (no pointers to other heap memory). The xor
+operator is used for hash calculations. This may be useful to
+compare lists (hash collisions could happen). This works only if
+the values are of homogenious size (which is of course not generally
+the case withlinked lists, use ll_are_equal in such cases).</p>
+<p class="code">
+char ll_hash(struct ll *a, size_t vsize, int n);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">linked list</td></tr>
+<tr><th>vsize</th>
+<td class="description">byte size of values <code>sizeof(a-&gt;value)</code></td></tr>
+<tr><th>n</th>
+<td class="description">number of elements in <code>a</code> to hash</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">calculated hash (<code>^</code>)</p>
 <h3 class="function"><a id="ll_length">ll_length</a></h3>
 <p class="description">traverses the list once to find the length</p>
 <p class="code">
@@ -272,6 +336,23 @@ struct ll *ll_reverse(struct ll *a);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">returns the new first element (previously last element)</p>
+<h3 class="function"><a id="ll_rm">ll_rm</a></h3>
+<p class="description">removes and frees sub-list c of size n from list ac, returns an
+address to the pointer that used to point to c (e.g. a 'next'
+pointer's address).</p>
+<p class="code">
+struct ll **ll_rm(struct ll **ac, struct ll *c, int n);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>ac</th>
+<td class="description">address of the HEAD pointer of a linked list</td></tr>
+<tr><th>c</th>
+<td class="description">pointer to a sub-list</td></tr>
+<tr><th>n</th>
+<td class="description">size of sub-list (elements)</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">either ac or the address of a next pointer, where c used to be</p>
 </div>
 </body>
 </html>

@@ -95,7 +95,9 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	return n;
 }
 
-const char* function_name(enum func f){
+/* Given a function enumerator, this return's the function's name */
+const char* /* pointer to the right entry in a global array of strings */
+function_name(enum func f) /* one of the known function enum values */ {
   return fname[f];
 }
 
@@ -122,11 +124,8 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 	}
 }
 
-/* This function checks whether the symbol is a number and equal to
- * the given value within double precision rounding errors
- * `(1e-15)+(1e-15)*|y|`. So, the equality is approximated.
- */
-int /* truth value */
+/* This function checks whether the symbol is a number (at all). */
+int /* truth value (the normal kind) */
 is_numeric(struct symbol *s) /* the symbol to check */
 {
 	return (s && s->type==symbol_number);
@@ -151,26 +150,34 @@ is_double(
 	return z;
 }
 
-/* This function checks whether the symbol is a number and equal to
- * the given value within double precision rounding errors
- * `(1e-15)+(1e-15)*|y|`. So, the equality is approximated.
- */
-int /* truth value */
+/* This function compares the symbol to `y` and returns 
+```
+  || case |value|
+  ||------|-----|
+  ||  s>y |  1  |
+  ||  s<y | -1  |
+  ||  s=y |  0  |
+  ||other | -2  |    
+```
+  
+If the symbol isn't a number an error code is
+returned (not -1, 0, 1). */
+int /* comparison result */
 symbol_cmpd(
 	struct symbol *s, /* the symbol to check for approximate equality */
 	double y) /* the value to compare against */
 {
-	int z=0; /* false */
+	int z=-2; /* error code */
 	double v;
 	if(s && s->type==symbol_number){
-		v=s->value - y;
-	  z=((v<0?-v:v) < 1e-15 + 1e-15*(y<0?-y:y));
+		v=s->value;
+		z=v>y?1:(v<y?-1:0);
 	}
 	return z;
 }
 
 
-/* This function tests whether two symbols are equal. It uses
+/* This function tests whether `a` is equal to `b`. It uses
  * `memcmp()`, so the equality must be exact, but it works regardless
  * of the symbol's type. Two non-existent symbols are considered
  * equal, as in: `(NULL==NULL)`, simlarly `is_equal(a,a)` is true.
