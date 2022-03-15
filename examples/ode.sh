@@ -4,6 +4,8 @@ S=../bin/simplify
 RPN=../bin/to_rpn
 IFX=../bin/to_infix
 
+MODEL=${1:-"DemoModel"}
+
 while read sv; do
 	echo "sv: $sv" 1>&2
 	$RPN < ReactionFlux.txt | $D "$sv" | $S 5 | $IFX > Flux_${sv}.txt
@@ -32,8 +34,8 @@ cat<<EOF
  * GSL_SUCCESS is returned when no error occurred.
  */
 
-/* ode vector field, the Activation expression is currently unused */
-int DemoModel_vf(double t, const double y_[], double f_[], void *par)
+/* ode vector field: y'=f(t,y;p), the Activation expression is currently unused */
+int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 {
 	double *p_=par;
 	if (!y_ || !f_) return ${NV};
@@ -48,8 +50,8 @@ echo "\treturn GSL_SUCCESS;"
 echo "}"
 
 cat<<EOF
-/* ode Jacobian df(t,y)/dy */
-int DemoModel_jac(double t, const double y_[], double *jac_, double *dfdt_, void *par)
+/* ode Jacobian df(t,y;p)/dy */
+int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void *par)
 {
 	double *p_=par;
 	if (!y_ || !jac_) return ${NV}*${NV};
@@ -63,3 +65,22 @@ for j in `seq 1 $NV`; do
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
+
+
+
+cat<<EOF
+/* ode Functions F(t,y;p) */
+int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
+{
+	double *p_=par;
+	if (!y_ || !func_) return `wc -l < Function.txt`;
+EOF
+
+awk '{print "\tdouble " $0 "=p_[" NR-1 "];"}' ParNames.txt
+awk '{print "\tdouble " $0 "=y_[" NR-1 "];"}' Variables.txt
+awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
+awk '{print "\tfunc_[" (NR-1) "] = " $0 ";"}' Function.txt
+echo "\treturn GSL_SUCCESS;"
+echo "}"
+
+
