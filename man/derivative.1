@@ -1,0 +1,45 @@
+.TH derivative 1 "2022-03-17" "0.1" "rpn-math-package"
+.SH NAME
+derivative - attempts to calculate the analytical derivative of a math expression (string)
+.SH SYNOPSIS
+.B
+derivative
+.I
+x
+
+.SH DESCRIPTION
+.B derivative
+will read lines with math expression from standard input
+and output their derivatives to standard output. Incorrect input
+(invalid math expressions) may result in a blank line in the output,
+but the number of lines and line correspondence will be preserved.
+
+Math has to be in space separated reverse Polish notation (similar to
+.B dc
+input). Names of functions must begin with an
+.B @
+symbol (e.g.
+.B @exp
+).
+
+
+.SH EXAMPLES
+
+Basic arithmetic:
+.B echo
+.I "'x y *'"
+.B | derivative x
+.RS
+outputs
+.I "1 y * x 0 * +"
+.RE
+
+Functions:
+.B echo
+.I "'-1 lambda t * * @exp'"
+.B | derivative t
+.RS
+outputs
+"-1 lambda t * * @exp 0 lambda t * * -1 0 t * lambda 1 * + * + *"
+, which is equivalent to:
+"-1 lambda t * * @exp -1 lambda * *".
