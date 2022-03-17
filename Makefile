@@ -1,7 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
+PREFIX = /usr/local/bin
 
-.PHONY: all test clean
+.PHONY: all test clean install manpages
 
 
 all: bin/derivative bin/simplify bin/to_rpn tests/ll_test bin/to_infix bin/to_c
@@ -29,3 +30,6 @@ test: bin/derivative bin/simplify tests/ll_test
 
 clean:
 	rm bin/derivative bin/simplify tests/ll_test
+
+install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
+	install -t $(PREFIX) $^ && install -t /usr/local/man/man1 man/*.1

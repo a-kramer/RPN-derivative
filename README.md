@@ -8,20 +8,22 @@ Especially the `derivative` program requires the input to be math in
 reverse Polish notation (rpn), e.g.: `1 2 +` (for 1+2); this notation
 does not *need*, nor *allow* parentheses. 
 
-On unix-like systems the `dc` program works with this notation,
-so it may be familiar.
+The [dc](https://linux.die.net/man/1/dc) program works with this notation,
+so it may be familiar to the reader.
 
 RPN math is easier (*citation needed*) to process (at least for what
 we do here) as there are no parentheses and evaluation follows a very
 simple algorithm.
 
 The input expression must be *balanced*, unlike: `x y z +`, which has
-an unused operand, while `x +` lacks an operand (`dc` would not care
-much about the former and print a warning about the latter, but
-balanced expressions make the code easier).
+an unused operand, or `x +`, which lacks an operand (`dc` would not care
+much about the former and print a warning about the latter).
 
 An unbalanced expression produces an empty line in the output of any
-program in this repository.
+program in this repository (or possibly a line with an error message).
+
+In any case, we try to keep the line numbers of input and output the
+same (the derivative of input line *n* will be in output line *n*).
 
 Although it is of course possible to use `derivative` and `simplify`
 by themselves, you can also use `to_rpn` to convert more conventional
@@ -29,7 +31,10 @@ math to rpn notation and `to_infix` to translate the result back.
 
 ## Compiling
 
-The default compiler is [gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git) will also work. In the root directory of this repository these commands:
+The default compiler in the [Makefile](Makefile) is
+[gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git)
+will also work. In the root directory of this repository these
+commands:
 
 ```bash
 $ mkdir bin
@@ -37,14 +42,32 @@ $ make
 $ make test 
 ```
 
-will create the binaries `derivative`, `simplify`, and `ll_test`; make test will run the tests in [test.sh](tests/test.sh).
+These commands will create the binaries `derivative`, `simplify`, and `ll_test`; `make test` will run [test.sh](tests/test.sh).
 
 The [symbol](src/symbol.h) component takes a macro that fixes the
-maximum length of variable names: `MAX_NAME_SIZE`. It can be defined o
-the command line: `-DMAX_NAME_SIZE=10`.
+maximum length of variable names: `MAX_NAME_SIZE`. It can be defined on
+the command line, when compiling: `gcc -DMAX_NAME_SIZE=10 [...]`.
 
-There is no `make install` at this stage of development, see
-[note](note.md) (also: no `man` pages yet).
+Installation is optional, see this [note](note.md).
+
+## Installation
+
+The default target directory for installation is `/usr/local/bin`:
+
+```sh
+$ make install
+```
+
+Afterwards, these commands should work:
+
+```sh
+$ which derivative
+/usr/local/bin/derivative
+$ man derivative
+```
+
+If you prefer a different location, edit the `PREFIX` variable in
+[Makefile](./Makefile).
 
 ## Usage
 
@@ -52,9 +75,9 @@ The programs in this repository are meant to be used via pipes:
 ```bash
 [...] | to_rpn | derivative x | simplify
 ```
-They all read _n_ lines from standard input (stdin) and output _n_ lines to standard output (stdout).
+They all read _n_ lines from standard input (stdin) and write _n_ lines to standard output (stdout).
 
-### Conversion to rpn
+### Conversion to RPN
 
 The program `to_rpn` reads `stdin` for math expressions in infix
 notation (the normal kind) and tries to convert them into reverse
@@ -62,7 +85,6 @@ Polish notation:
 
 ```
 $ bin/to_rpn < math.txt
-[...]
 ```
 
 This program takes no command line arguments. 
@@ -89,7 +111,7 @@ of this sort are likely to happen downstream.
 
 ```sh
 $ cd RPN-Derivative
-$ bin/to_rpn < math.txt | bin/derivative t
+$ to_rpn < math.txt | derivative t
 ```
 
 The `derivative` function takes one mandatory command line argument,
@@ -102,7 +124,6 @@ will be calculated with respect to the named variable.
 obviously unnecessary operations like `x 0 +`.
 
 ```sh
-$ alias simplify='~/path/to/simplify'
 $ echo "x 0 0 + +" | simplify [n]
 ```
 
