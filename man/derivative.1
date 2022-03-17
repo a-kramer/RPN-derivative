@@ -2,10 +2,7 @@
 .SH NAME
 derivative - attempts to calculate the analytical derivative of a math expression (string)
 .SH SYNOPSIS
-.B
-derivative
-.I
-x
+\fB derivative \fI x
 
 .SH DESCRIPTION
 .B derivative
@@ -26,20 +23,23 @@ symbol (e.g.
 .SH EXAMPLES
 
 Basic arithmetic:
-.B echo
-.I "'x y *'"
-.B | derivative x
-.RS
-outputs
-.I "1 y * x 0 * +"
-.RE
+.EX
+$ echo 'x y *' | derivative x
+1 y * x 0 * +
+.EE
 
 Functions:
-.B echo
-.I "'-1 lambda t * * @exp'"
-.B | derivative t
-.RS
-outputs
-"-1 lambda t * * @exp 0 lambda t * * -1 0 t * lambda 1 * + * + *"
-, which is equivalent to:
-"-1 lambda t * * @exp -1 lambda * *".
+.EX
+$ echo '-1 lambda t * * @exp' | derivative t
+-1 lambda t * * @exp 0 lambda t * * -1 0 t * lambda 1 * + * + *
+.EE
+which is equivalent to: "-1 lambda t * * @exp -1 lambda * *".
+
+.SH OPTIONS
+.TP
+\fIy\fR
+the name of a variable. Derivative will be done with respect to\fI y\fR. 
+
+.SH SEE ALSO
+
+simplify(1), to_rpn(1), to_infix(1)

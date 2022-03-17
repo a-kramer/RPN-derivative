@@ -1,0 +1,51 @@
+.TH "to infix" 1 "2022-03-17" "0.1" "rpn-math-package"
+.SH NAME
+to_infix - attempts to convert an RPN math expression to more usual infix operator notation.
+.SH SYNOPSIS
+
+\fBto_infix \fR[-s|--safe-frac[=\fIsmall.double\fR]]
+
+.SH DESCRIPTION
+.B to_infix
+will read lines with math expressions in Reverse Polish notation (RPN)
+from standard input and write the same expression in infix notation to standard output.
+
+Incorrect input (invalid math expressions) may result in a blank line
+in the output, but the number of lines and line correspondence will be
+preserved.
+
+Names of functions must begin with an
+.B @
+symbol (e.g.\fB@exp\fR).
+
+.SH EXAMPLES
+
+Parentheses:
+.EX
+$ echo 'x 1 x + /' | to_infix
+(x/(1+x))
+.EE
+
+Fraction safety:
+.EX
+$ echo 'x 5 @pow x /' | to_infix -s
+(pow(x,5)/(2.22507e-308 + x))
+.EE
+This will prevent division by 0 in cases where x>=0 and you are
+confident that the fraction must be defined (here, x should cancel with x^5, but the literal input expression cannot be numerically evaluated at x=0).
+
+.SH OPTIONS
+
+.TP
+\fB-s\fR
+This option will activate safe fraction printing. It can be
+useful in cases where the user is certain that the fraction has a
+finite limit when the denominator approaches 0 and the denominator is known to be non-negative. In this case, the DBL_MIN constant will be added to the denominator to prevent division by zero. Use with caution
+
+.TP
+\fB--safe-frac\fR[=1e-10]
+This is the same as \fB-s\fR but the optional value will be used
+instead of DBL_MIN.
+
+.SH SEE ALSO
+derivative(1), simplify(1), to_rpn(1)

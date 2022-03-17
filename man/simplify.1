@@ -1,0 +1,51 @@
+.TH simplify 1 "2022-03-17" "0.1" "rpn-math-package"
+.SH NAME
+simplify - attempts to reduce the length of an rpn math expression using simple rules
+.SH SYNOPSIS
+.B
+simplify
+.I [n]
+
+.SH DESCRIPTION
+.B simplify
+will read lines with math expressions from standard input
+and write a possibly modified expression to standard output. Incorrect input
+(invalid math expressions) may result in a blank line in the output,
+but the number of lines and line correspondence will be preserved.
+
+Math has to be in spac	e separated reverse Polish notation (similar to
+.B dc
+input). Names of functions must begin with an
+.B @
+symbol (e.g.
+.B @exp
+).
+
+.SH EXAMPLES
+.EX
+Multiplication with 1
+$ echo 'x 1 *' | simplify 1
+x
+.EE
+
+
+Multiplication with 0:
+.EX
+$ echo '0 lambda t * * @exp' | simplify 
+0 @exp
+.EE
+
+
+Repeated reduction:
+.EX
+$ echo '0 lambda t * * @exp' | simplify 2
+1
+.EE
+
+.SH OPTIONS
+.TP
+\fB n \fR
+simplify will internally loop \fI n \fR times (defaults to 1).
+
+.SH SEE ALSO
+derivative(1), to_rpn(1), to_infix(1)

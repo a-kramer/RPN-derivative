@@ -1,0 +1,48 @@
+.TH "to_rpn" 1 "2022-03-17" "0.1" "rpn-math-package"
+
+.SH NAME
+to\_rpn - attempts to convert an infix math expression to reverse Polish notation.
+.SH SYNOPSIS
+.B
+to_rpn
+
+.SH DESCRIPTION
+.B to_rpn
+will read lines with infix math expressions (e.g. "a/b") from standard input
+and write the same expression in reverse Polish notation (RPN). Incorrect input
+(invalid math expressions) may result in a blank line in the output,
+but the number of lines and line correspondence will be preserved.
+
+Names of functions must begin with an
+.B @
+symbol (e.g.\fB@exp\fR).
+
+.SH EXAMPLES
+
+Parentheses:
+.EX
+$ echo '(x/(1+x))' | to_rpn
+x 1 x + /
+.EE
+
+Functions:
+.EX
+$ echo '@exp(-1*t)' | to_rpn
+-1 t * @exp
+.EE
+
+unary vs. binary minus and plus:
+.EX
+$ echo 'a-b' | to_rpn
+a b -
+$ echo 'a - 2' | to_rpn
+a 2 -
+.EE
+The extra spacing in 'a - 2' prevents the «-» to be interpreted as unary (-2).
+
+.SH OPTIONS
+
+None.
+
+.SH SEE ALSO
+derivative(1), simplify(1), to\_infix(1)
