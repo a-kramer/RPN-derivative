@@ -1,14 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 PREFIX = /usr/local/bin
+MANPREFIX = /usr/local/man/man1
 
 .PHONY: all test clean install manpages
 
 
-all: bin/derivative bin/simplify bin/to_rpn tests/ll_test bin/to_infix bin/to_c
-
-bin/to_c: src/rpn_to_c.c src/ll.c src/symbol.c src/rpn.c
-	$(CC) $(CFLAGS) -o $@ $^
+all: bin/derivative bin/simplify bin/to_rpn tests/ll_test bin/to_infix 
 
 bin/to_infix: src/rpn_to_infix.c src/ll.c src/symbol.c src/rpn.c
 	$(CC) $(CFLAGS) -o $@ $^
@@ -32,4 +30,6 @@ clean:
 	rm bin/derivative bin/simplify tests/ll_test
 
 install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
-	install -t $(PREFIX) $^ && install -t /usr/local/man/man1 man/*.1
+	install -t $(PREFIX) bin/* && \
+  ([ -d $(MANPREFIX) ] && echo "man pages: $(MANPREFIX)" ||  mkdir $(MANPREFIX)) && \
+  install -t $(MANPREFIX) man/*.1
