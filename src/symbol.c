@@ -29,7 +29,7 @@ match_func(const char *s) /* a \0 terminated string, like "exp" or "sin" */
 struct symbol* /* a symbol of type `symbol_number` with value `d` */
 symbol_allocd(double d) /* the value of the new symbol */
 {
-	struct symbol *n=malloc(sizeof(struct symbol));
+  struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
 	n->type=symbol_number;
   n->value=d;
@@ -39,7 +39,7 @@ symbol_allocd(double d) /* the value of the new symbol */
 
 struct symbol* symbol_alloc_op(char op)
 {
-	struct symbol *n=malloc(sizeof(struct symbol));
+  struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
 	assert(op!='\0' && strchr("+-*/",op));
 	n->type=symbol_operator;
@@ -59,7 +59,7 @@ struct symbol* /* a pointer to the allocated memory for the new symbol */
 symbol_alloc(char *s) /* a string used to initialize the symbol struct with a type and contents */
 {
 	assert(s);
-	struct symbol *n=malloc(sizeof(struct symbol));
+	struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
 	size_t len=strlen(s);
 	char *p;
