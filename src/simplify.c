@@ -89,13 +89,13 @@ common_factor(
 	printf("b: "); pn_print(b);
 	*/
 	const size_t symsize=sizeof(struct symbol);
-	char ha=ll_hash(a,symsize,da);
-	char hb=ll_hash(b,symsize,db);
+	char ha=ll_hash(a,symsize,da+1);
+	char hb=ll_hash(b,symsize,db+1);
 	if (a && b && da==db && ha==hb && ll_start_equal(a,b,da+1,symsize)){
 		*ca=a;
 		*cb=b;
 		RET=1;
-	}	else {
+	} else {
 		if (a){
 			s=a->value;
 			if (s->type==symbol_operator){
@@ -108,7 +108,7 @@ common_factor(
 				case '/':
 					RET=common_factor(aa,b,ca,cb);
 					break;
-				}		
+				}
 			}
 		}
 		if (b && !RET){

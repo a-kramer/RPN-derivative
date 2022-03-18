@@ -26,7 +26,7 @@ void ll_append(
 
 /* This function removes the last element from the list and returns
  * the pointer to its value (the pointer that was originally used to
- * store the element). 
+ * store the element).
  */
 void* /* pointer to the stored element */
 ll_remove(struct ll **L) /* `L` is the first element of the list (or *L is NULL). */
