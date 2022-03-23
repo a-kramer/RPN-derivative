@@ -12,14 +12,14 @@ void help(char *name){
 	printf("[%s]\tUsage: %s 'x' < rpn.txt\n",__func__,name);
 	printf("\t%s will attempt to calculate the symbolic derivative\n\tof rpn with respect to the symbolic variable 'x'\n",name);
 	printf("\texample: $ echo 'x y *' | %s x\n",name);
-	printf("\t         y\n");	
+	printf("\t         y\n");
 }
 
 struct ll* function_derivative(struct symbol *fun, struct ll *a, const char *x){
 	struct ll *res=NULL;
 	struct ll *a_rev=NULL;
 	struct ll *base_rev=NULL, *base_rev2=NULL;
-	struct ll *p_rev=NULL;//, *p_rev2=NULL;	
+	struct ll *p_rev=NULL;
 	struct ll *base=NULL;
 	struct ll *p=NULL;
 	assert(fun->type==symbol_function);
@@ -53,7 +53,7 @@ struct ll* function_derivative(struct symbol *fun, struct ll *a, const char *x){
 		ll_cat(&res,a_rev);
 		ll_append(&res,symbol_alloc("@sin"));
 		ll_append(&res,symbol_allocd(-1.0));
-		ll_append(&res,symbol_alloc("*"));		
+		ll_append(&res,symbol_alloc("*"));
 		ll_cat(&res,derivative(a,x));
 		ll_append(&res,symbol_alloc("*"));
 		free(fun);
@@ -132,7 +132,7 @@ struct ll* basic_op_derivative(struct symbol *s, struct ll *a, struct ll *b, con
 		ll_cat(&res,bb);
 		ll_append(&res,symbol_alloc("*"));
 		ll_append(&res,s);
-		break;		
+		break;
 	}
 	return res;
 }
@@ -189,10 +189,8 @@ int main(int argc, char* argv[]){
 		assert(isalpha(x[0]));
 		do{
 			m=getline(&rpn,&n,stdin);
-			//fprintf(stderr,"[%s] line: %s (%li characters)\n",__func__,rpn,m);
 			if (m>0 && !feof(stdin)){
-				s=strchr(rpn,'\n');
-				if (s) s[0]='\0';
+				rpn[m-1]='\0';
 				p=strtok(rpn,delim);
 				pn=NULL;
 				while (p){

@@ -52,8 +52,9 @@ struct symbol* symbol_alloc_op(char op)
  * kinds of symbols: numbers, variables, operators and functions. The
  * string `s` is used to initialize the new symbol struct. Conversion
  * to a double precision number is attempted, if that fails, the
- * string is checked against known operator symbols, given only 1 alphabetical 
- * letter, the string is interpreted as a variable. Lastly it's compared against known functions.
+ * string is checked against known operator symbols. strings that
+ * begin with the symbol @ are interpreted as function
+ * names. Otherwise the string is a variable name.
  */
 struct symbol* /* a pointer to the allocated memory for the new symbol */
 symbol_alloc(char *s) /* a string used to initialize the symbol struct with a type and contents */
@@ -66,7 +67,6 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	char c=s[0];
 	size_t z=MAX_NAME_SIZE-1;
 	z=(len>z)?z:len;
-	
 	p=s;
 	double d=strtod(s,&p);
 	/* fprintf(stderr,"length(%s)=«%li»\n",s,len); */
@@ -102,7 +102,7 @@ function_name(enum func f) /* one of the known function enum values */ {
 }
 
 /* This function prints a representation of the symbol, as appropriate
- * for the type. 
+ * for the type.
  */
 void symbol_print(struct symbol *s) /* the symbol to print (number, operator, varibale name, or function) */
 {

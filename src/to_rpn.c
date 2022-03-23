@@ -4,16 +4,16 @@
 #include "rpn.h"
 
 int priority(char op){
-  int p;
-  switch (op){
-  case '+': p=1; break;
-  case '-': p=1; break;
-  case '*': p=2; break;
-  case '/': p=2; break;
+	int p;
+	switch (op){
+	case '+': p=1; break;
+	case '-': p=1; break;
+	case '*': p=2; break;
+	case '/': p=2; break;
 	case '@': p=3; break;
-  default: p=0;    
-  }
-  return p;
+	default: p=0;
+	}
+	return p;
 }
 
 void print_stack(struct ll *stack){
@@ -58,7 +58,7 @@ struct ll* infix_to_rpn(char *infix)
 			ll_push(&stack,memcpy(calloc(2,sizeof(char)),s,1));
 			s++;
 		} else if (*s == ')'){
-			while ( *(p=ll_pop(&stack))!='(' && p ){
+			while (stack && *(p=ll_pop(&stack))!='('){
 				ll_append(&rpn,symbol_alloc_op(*p));
 				free(p);
 			}
@@ -96,7 +96,7 @@ struct ll* infix_to_rpn(char *infix)
 		p=ll_pop(&stack);
 		ll_append(&rpn,symbol_alloc(p));
 		free(p);
-	}	
+	}
 	return rpn;
 }
 
@@ -104,14 +104,12 @@ int main(int argc, char *argv[])
 {
 	size_t n=20;
 	char *infix=malloc(n);
-	char *s;
 	size_t m=0;
 	struct ll* rpn;
 	do{
 		m=getline(&infix,&n,stdin);
 		if (m>0 && !feof(stdin)){
-			s=strchr(infix,'\n');
-			if (s) s[0]='\0';
+			infix[m-1]='\0';
 			rpn=infix_to_rpn(infix);
 			rpn_print(rpn);
 			putchar('\n');

@@ -220,7 +220,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *s)
 	int a1=(da==0 && is_double(a->value,1.0));
 	int b0=(db==0 && is_double(b->value,0.0));
 	int b1=(db==0 && is_double(b->value,1.0));
-	struct ll *c=NULL, *ca=NULL, *cb=NULL; 
+	struct ll *c=NULL, *ca=NULL, *cb=NULL;
 	assert(s->type==symbol_operator);
 	switch(s->op){
 	case '+':
@@ -296,7 +296,7 @@ struct ll* basic_op_simplify(struct ll *a, struct ll *b, struct symbol *s)
 		} else if (b1) {
 			ll_free(&b);
 			ll_cat(&res,simplify(a));
-		}	
+		}
 		break;
 	}
 	if(!res) {
@@ -349,13 +349,11 @@ int main(int argc, char* argv[]){
 	}
 	do{
 		m=getline(&rpn,&n,stdin);
-		//printf("[%s] line: %s (%li characters)\n",__func__,rpn,m);
 		if (m>0 && !feof(stdin)){
-			s=strchr(rpn,'\n');
-			if (s) s[0]='\0';
+			rpn[m-1]='\0';
 			p=strtok(rpn,delim);
 			/* init */
-			r=NULL; 
+			r=NULL;
 			res=NULL;
 			while (p){
 				ll_push(&r,symbol_alloc(p));
@@ -373,4 +371,4 @@ int main(int argc, char* argv[]){
 		}
 	} while (!feof(stdin));
 	return EXIT_SUCCESS;
-}	
+}
