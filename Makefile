@@ -32,4 +32,4 @@ clean:
 install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
 	install bin/* $(PREFIX) && \
   ([ -d $(MANPREFIX) ] && echo "man pages: $(MANPREFIX)" ||  mkdir $(MANPREFIX)) && \
-  install man/*.1 $(MANPREFIX)  && gzip $(MANPREFIX)/*.1
+  install man/*.1 $(MANPREFIX)  && gzip -f $(MANPREFIX)/*.1
