@@ -61,7 +61,7 @@ Installation is optional, see this [note](note.md).
 The default target directory for installation is `/usr/local/bin`:
 
 ```sh
-$ make install
+$ sudo make install
 ```
 
 Afterwards, these commands should work:
@@ -155,7 +155,7 @@ obvious common factors are detected.
 To calculate the derivative of `x*y/(a+b)` with respect to `y`, we would type:
 
 ```bash
-$ echo -e "x y * a b + /" | derivative y | simplify 3
+$ echo "x y * a b + /" | derivative y | simplify 3
 ```
 this produces the output:
 ```
@@ -171,7 +171,7 @@ it merely tries some simple pattern recognition.
 An easier example `d[x*y*(y+2)]/dy`:
 
 ```sh
-$ echo -e "x y * y 2 + *" | derivative y | simplify 2
+$ echo "x y * y 2 + *" | derivative y | simplify 2
 ```
 
 outputs:
