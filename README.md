@@ -4,6 +4,12 @@ With this code, we try to calculate the symbolic derivative, say
 `d(y*x)/dx = y`, with as simple means as possible, without using
 external libraries.
 
+Specifically, this project aims to automatically calculate the
+Jacobian of a vector valued function used as right hand side in
+ordinary differential equations.
+
+## Summary 
+
 Especially the `derivative` program requires the input to be math in
 reverse Polish notation (rpn), e.g.: `1 2 +` (for 1+2); this notation
 does not *need*, nor *allow* parentheses. 
@@ -319,22 +325,3 @@ p'` prints `1` (because floor(3/2) is 1); `dc -e '3 k 3 2 / p'` prints
 
 
 
-## Plans
-
-Near future: automatic conversion from rpn strings to C code. Then, it will be possible to do this (perhaps): 
-```bash
-$ # planned:
-$ echo "x*y" | to_rpn | derivative x | simplify 3 | rpn_to_c 
-```
-
-maybe like this
-```
-double derivative(double x, double y)
-{
- return y;
-}
-```
-
-Or something similar. But specifically, this project aims to
-automatically calculate the Jacobian of a vector valued function used
-as right hand side in ordinary differential equations.
