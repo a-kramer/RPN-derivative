@@ -30,6 +30,6 @@ clean:
 	rm bin/derivative bin/simplify tests/ll_test
 
 install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
-	install -t $(PREFIX) bin/* && \
+	install bin/* $(PREFIX) && \
   ([ -d $(MANPREFIX) ] && echo "man pages: $(MANPREFIX)" ||  mkdir $(MANPREFIX)) && \
-  install -t $(MANPREFIX) man/*.1 && gzip $(MANPREFIX)/*.1
+  install man/*.1 $(MANPREFIX)  && gzip $(MANPREFIX)/*.1
