@@ -82,8 +82,8 @@ struct ll* infix_to_rpn(char *infix)
 			s++;
 		} else if (s && isalpha(*s)) {
 			k=word_length(s);
-			p=memcpy(malloc(k+1),s,k);
-			*(p+k)='\0';
+			p=memcpy(calloc(k+1,sizeof(char)),s,k);
+			//*(p+k)='\0';
 			/* printf("«%s»\n",p); */
 			ll_append(&rpn,symbol_alloc(p));
 			free(p);

@@ -177,10 +177,9 @@ struct ll* derivative(struct ll *pn, const char *x){
 int main(int argc, char* argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
-	char *p, *s;
+	char *p;
 	size_t m=0;
 	char *x;
-
 	const char delim[]=" ";
 	struct ll *pn=NULL; /* polish notation expression */
 	struct ll *res=NULL;

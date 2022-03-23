@@ -338,7 +338,7 @@ struct ll* simplify(struct ll *stack){
 int main(int argc, char* argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
-	char *p, *s;
+	char *p;
 	ssize_t m=0;
 	int i,N=1;
 	const char delim[]=" ";
