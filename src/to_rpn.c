@@ -80,11 +80,16 @@ struct ll* infix_to_rpn(char *infix)
 			}
 			ll_push(&stack,memcpy(calloc(2,sizeof(char)),s,1));
 			s++;
+		} else if (s && *s==','){
+			while (stack && (t=*((char*) stack->value))!='(' && priority(t)>=priority(*s)){
+				p=ll_pop(&stack);
+				ll_append(&rpn,symbol_alloc(p));
+				free(p);
+			}
+			s++;
 		} else if (s && isalpha(*s)) {
 			k=word_length(s);
 			p=memcpy(calloc(k+1,sizeof(char)),s,k);
-			//*(p+k)='\0';
-			/* printf("«%s»\n",p); */
 			ll_append(&rpn,symbol_alloc(p));
 			free(p);
 			s+=k;
