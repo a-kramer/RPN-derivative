@@ -1,7 +1,7 @@
 #!/bin/sh
 
 printf "## R matrices are filled column-wise by default\n"
-printf "jac <- matrix(c(df_dx1, \n\tdf_dx2))\n" > jac.R
+printf "jac <- matrix(c(dfdx1, \n\tdfdx2))\n" > jac.R
 printf "x1*x2/(x1+x2)\nx1*x2*x3*x4" > f.txt
 
 for x in x1 x2 ; do
