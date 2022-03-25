@@ -8,11 +8,11 @@ Specifically, this project aims to automatically calculate the
 Jacobian of a vector valued function used as right hand side in
 ordinary differential equations.
 
-## Summary 
+## Summary
 
 Especially the `derivative` program requires the input to be math in
 reverse Polish notation (rpn), e.g.: `1 2 +` (for 1+2); this notation
-does not *need*, nor *allow* parentheses. 
+does not *need*, nor *allow* parentheses.
 
 The [dc](https://linux.die.net/man/1/dc) program works with this notation,
 so it may be familiar to the reader.
@@ -27,6 +27,14 @@ much about the former and print a warning about the latter).
 
 An unbalanced expression produces an empty line in the output of any
 program in this repository (or possibly a line with an error message).
+
+All programs read from stdin, and each line must be terminated with `\n` (`echo` does that automatically):
+
+```sh
+$ printf "a x *" | derivative x
+$ printf "a x *\n" | derivative x
+0 x * a 1 * +
+```
 
 In any case, we try to keep the line numbers of input and output the
 same (the derivative of input line *n* will be in output line *n*).

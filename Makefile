@@ -1,4 +1,4 @@
-CC = gcc
+CC = cc
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 PREFIX = /usr/local/bin
 MANPREFIX = /usr/local/man/man1

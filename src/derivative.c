@@ -186,22 +186,19 @@ int main(int argc, char* argv[]){
 	if (argc>1){
 		x=argv[1];
 		assert(isalpha(x[0]));
-		do{
-			m=getline(&rpn,&n,stdin);
-			if (m>0 && !feof(stdin)){
-				rpn[m-1]='\0';
-				p=strtok(rpn,delim);
-				pn=NULL;
-				while (p){
-					ll_push(&pn,symbol_alloc(p));
-					p=strtok(NULL,delim);
-				}
-				if (pn && balanced(pn)) res=derivative(pn,x);
-				rpn_print(res);
-				putchar('\n');
-				ll_free(&res);
+		while ((m=getline(&rpn,&n,stdin))>0 && !feof(stdin)){
+			rpn[m-1]='\0';
+			p=strtok(rpn,delim);
+			pn=NULL;
+			while (p){
+				ll_push(&pn,symbol_alloc(p));
+				p=strtok(NULL,delim);
 			}
-		} while (!feof(stdin));
+			if (pn && balanced(pn)) res=derivative(pn,x);
+			rpn_print(res);
+			putchar('\n');
+			ll_free(&res);
+		}
 	} else {
 		help(argv[0]);
 	}

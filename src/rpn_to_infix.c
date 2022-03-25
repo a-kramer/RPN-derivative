@@ -77,6 +77,7 @@ int main(int argc, char *argv[]){
 	char *val;
 	double d=0;
 	int i;
+	/* parse options */
 	for (i=1;i<argc;i++){
 		opt=argv[i];
 		l=strlen(opt);
@@ -93,24 +94,21 @@ int main(int argc, char *argv[]){
 		}
 		if (d>0) safety_val=d;
 	}
-	do{
-		m=getline(&rpn,&n,stdin);
-		//printf("[%s] line: %s (%li characters)\n",__func__,rpn,m);
-		if (m>0 && !feof(stdin)){
-			s=strchr(rpn,'\n');
-			if (s) s[0]='\0';
-			p=strtok(rpn,delim);
-			/* init */
-			r=NULL;
-			while (p){
-				ll_push(&r,symbol_alloc(p));
-				p=strtok(NULL,delim);
-			}
-			if (r){
-				to_infix(r);
-				putchar('\n');
-			}
+	/* read from stdin */
+	while ((m=getline(&rpn,&n,stdin))>0 && !feof(stdin));
+		s=strchr(rpn,'\n');
+		if (s) s[0]='\0';
+		p=strtok(rpn,delim);
+		/* init */
+		r=NULL;
+		while (p){
+			ll_push(&r,symbol_alloc(p));
+			p=strtok(NULL,delim);
 		}
-	} while (!feof(stdin));
+		if (r){
+			to_infix(r);
+			putchar('\n');
+		}
+	}
 	return EXIT_SUCCESS;
 }

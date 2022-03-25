@@ -111,14 +111,11 @@ int main(int argc, char *argv[])
 	char *infix=malloc(n);
 	size_t m=0;
 	struct ll* rpn;
-	do{
-		m=getline(&infix,&n,stdin);
-		if (m>0 && !feof(stdin)){
-			infix[m-1]='\0';
-			rpn=infix_to_rpn(infix);
-			rpn_print(rpn);
-			putchar('\n');
-		}
-	} while (!feof(stdin));
+	while ((m=getline(&infix,&n,stdin))>0 && !feof(stdin)){
+		infix[m-1]='\0';
+		rpn=infix_to_rpn(infix);
+		rpn_print(rpn);
+		putchar('\n');
+	}
 	return EXIT_SUCCESS;
 }
