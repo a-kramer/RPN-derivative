@@ -71,7 +71,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	double d=strtod(s,&p);
 	/* fprintf(stderr,"length(%s)=«%li»\n",s,len); */
 	if (s==p){
-    if (len==1 && strchr("+-*/^",c)){
+    if (len==1 && c && strchr("+-*/^",c)){
 			n->type=symbol_operator;
 			n->op=c;
 			n->nargs=2;
