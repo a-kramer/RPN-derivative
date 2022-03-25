@@ -14,9 +14,7 @@ Incorrect input (invalid math expressions) may result in a blank line
 in the output, but the number of lines and line correspondence will be
 preserved.
 
-Names of functions must begin with an
-.B @
-symbol (e.g.\fB@exp\fR).
+Names of functions must begin with an \fB@\fR symbol (e.g.\fB@exp\fR).
 
 .SH EXAMPLES
 
@@ -29,23 +27,26 @@ $ echo 'x 1 x + /' | to_infix
 Fraction safety:
 .EX
 $ echo 'x 5 @pow x /' | to_infix -s
-(pow(x,5)/(2.22507e-308 + x))
+(pow(x,5)/(2.22507e-308 + fabs(x)))
 .EE
+
 This will prevent division by 0 in cases where x>=0 and you are
-confident that the fraction must be defined (here, x should cancel with x^5, but the literal input expression cannot be numerically evaluated at x=0).
+confident that the fraction must be defined (here, x should cancel
+with x^5, but the literal input expression cannot be numerically
+evaluated at x=0).
 
 .SH OPTIONS
 
 .TP
-\fB-s\fR
-This option will activate safe fraction printing. It can be
-useful in cases where the user is certain that the fraction has a
-finite limit when the denominator approaches 0 and the denominator is known to be non-negative. In this case, the DBL_MIN constant will be added to the denominator to prevent division by zero. Use with caution
+\fB-s\fR[val], \fB--safe-frac\fR[=val]
 
-.TP
-\fB--safe-frac\fR[=1e-10]
-This is the same as \fB-s\fR but the optional value will be used
-instead of DBL_MIN.
+This option will activate safe fraction printing. It can be useful in
+cases where the user is certain that the fraction has a finite limit
+when the denominator approaches 0 from above and the denominator is
+known to be non-negative (this will be ensured by \fBfabs()\fR. The
+optional value (default: \fBDBL_MIN\fR constant) will be added to the
+denominator to prevent division by zero. Use with caution, some
+fractions just are undefined.
 
 .SH SEE ALSO
 derivative(1), simplify(1), to_rpn(1)

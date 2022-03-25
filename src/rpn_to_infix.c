@@ -10,12 +10,15 @@
 #define OPT_SAFE_FRAC 1
 
 static int options=OPT_NONE;
-static double safety_val=DBL_MIN; 
+static double safety_val=DBL_MIN;
 
 void help(char *name){
 	assert(name);
 	printf("[%s]\tUsage: %s < rpn.txt\n",__func__,name);
-	printf("\t%s will attempt to write an infix expression that evaluates to the same\n\tresult as evaluating the rpn expression directly\n\tThis program reads from stdin\n",name);
+	printf("\
+\t%s will attempt to write an infix expression that evaluates to the same\n\
+\tresult as evaluating the rpn expression directly\n\
+\tThis program reads from stdin\n",name);
 	printf("\texample: $ echo 'x 0 *' | %s\n",name);
 }
 
@@ -32,10 +35,9 @@ void to_infix(struct ll *pn){
 			to_infix(a);
 			printf("%c",s->op);
 			if (options&OPT_SAFE_FRAC && s->op=='/'){
-				putchar('(');
-				printf("%g + ",safety_val);
+				printf("(%g + fabs(",safety_val);
 				to_infix(b);
-				putchar(')');
+				printf("))");
 			} else {
 				to_infix(b);
 			}
@@ -57,7 +59,7 @@ void to_infix(struct ll *pn){
 			}
 			break;
 		default:
-			symbol_print(s);			
+			symbol_print(s);
 		}
 	}
 }
@@ -73,7 +75,7 @@ int main(int argc, char *argv[]){
 	char *opt;
 	size_t l;
 	char *val;
-	double d;
+	double d=0;
 	int i;
 	for (i=1;i<argc;i++){
 		opt=argv[i];
@@ -82,15 +84,15 @@ int main(int argc, char *argv[]){
 		if (val) {
 			val++;
 		}
-		if (strcmp("-s",opt)==0){
+		if (l>0 && memcmp("-s",opt,l<2?l:2)==0){
 			options|=OPT_SAFE_FRAC;
+			d=strtod(opt+2,NULL);
 		} else if (val && memcmp("--safe-frac",opt,l<11?l:11)==0){
 			options|=OPT_SAFE_FRAC;
 			d=strtod(val,NULL);
-			if (d>0) safety_val=d;
 		}
+		if (d>0) safety_val=d;
 	}
-	
 	do{
 		m=getline(&rpn,&n,stdin);
 		//printf("[%s] line: %s (%li characters)\n",__func__,rpn,m);
@@ -99,7 +101,7 @@ int main(int argc, char *argv[]){
 			if (s) s[0]='\0';
 			p=strtok(rpn,delim);
 			/* init */
-			r=NULL; 
+			r=NULL;
 			while (p){
 				ll_push(&r,symbol_alloc(p));
 				p=strtok(NULL,delim);

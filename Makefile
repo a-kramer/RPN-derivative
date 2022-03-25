@@ -3,7 +3,8 @@ CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 PREFIX = /usr/local/bin
 MANPREFIX = /usr/local/man/man1
 
-.PHONY: all test clean install manpages bin
+
+.PHONY: all test clean install uninstall manpages bin
 
 
 all: bin/derivative bin/simplify bin/to_rpn tests/ll_test bin/to_infix
@@ -36,3 +37,6 @@ install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
 	install bin/* $(PREFIX) && \
   ([ -d $(MANPREFIX) ] && echo "man pages: $(MANPREFIX)" ||  mkdir $(MANPREFIX)) && \
   install man/*.1 $(MANPREFIX)  && gzip -f $(MANPREFIX)/*.1
+
+uninstall:
+	for f in derivative simplify to_rpn to_infix ; do rm $(PREFIX)/$$f && rm $(MANPREFIX)/$${f}.1.gz ; done

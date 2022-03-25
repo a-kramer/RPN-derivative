@@ -1,3 +1,18 @@
+# Examples
+
+This follder contains a very small example in the shell script
+[a.sh](a.sh) and a slightly larger example in [ode.sh](ode.sh).
+
+```sh
+$ ./a.sh
+```
+
+In [a.sh](a.sh) we create an [R](https://www.r-project.org/) file that
+could be used as an analytical jacobian function (a.sh only prints the
+body of the function). The R code is displayed on the terminal screen.
+
+The second example represents a chemical reaction network.
+
 # Example Model
 
 This ODE model is meant to demonstrate how the programs in this

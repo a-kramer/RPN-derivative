@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 	struct ll* rpn;
 	do{
 		m=getline(&infix,&n,stdin);
-		if (m>0 && !feof(stdin)){
+		if (m>0){
 			infix[m-1]='\0';
 			rpn=infix_to_rpn(infix);
 			rpn_print(rpn);
