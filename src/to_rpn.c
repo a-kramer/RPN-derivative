@@ -18,6 +18,7 @@ int priority(char op){
 
 void print_stack(struct ll *stack){
 	char *p;
+	printf("[%s] strings: ",__func__);
 	while (stack){
 		p=stack->value;
 		printf("%s ",p);
@@ -30,7 +31,7 @@ int word_length(char *s){
 	char *p=s;
 	int k=0;
 	if (p){
-		while (isalnum(*p) || strchr("@_",*p)){
+		while (*p && (isalnum(*p) || strchr("@_",*p)!=NULL)){
 			p++;
 			k++;
 		}
@@ -46,9 +47,7 @@ struct ll* infix_to_rpn(char *infix)
 	double d;
 	int k;
 	s=infix;
-	//printf("[%s] «%s»\n",__func__,infix);
-	while (*s){
-		//print_stack(stack);
+	while ((*s)!='\0'){
 		p=s;
 		d=strtod(s,&p);
 		if (s!=p){
@@ -72,7 +71,7 @@ struct ll* infix_to_rpn(char *infix)
 			k=word_length(s);
 			ll_push(&stack,memcpy(calloc(k+1,sizeof(char)),s,k));
 			s+=k;
-		} else if (s && strchr("+-*/",*s)){
+		} else if (s && *s!='\0' && strchr("+-*/",*s)){
 			while (stack && (t=*((char*) stack->value))!='(' && priority(t)>=priority(*s)){
 				p=ll_pop(&stack);
 				ll_append(&rpn,symbol_alloc(p));
@@ -90,6 +89,7 @@ struct ll* infix_to_rpn(char *infix)
 		} else if (s && isalpha(*s)) {
 			k=word_length(s);
 			p=memcpy(calloc(k+1,sizeof(char)),s,k);
+			assert(p);
 			ll_append(&rpn,symbol_alloc(p));
 			free(p);
 			s+=k;
