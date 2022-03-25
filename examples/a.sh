@@ -1,8 +1,8 @@
 #!/bin/sh
 
 printf "## R matrices are filled column-wise by default\n"
-printf "jac <- matrix(c(dfdx1, \n\tdfdx2))\n" > jac.R
-printf "x1*x2/(x1+x2)\nx1*x2*x3*x4" > f.txt
+printf "jac <- matrix(c(dfdx1, \n\tdfdx2),2,2)\n" > jac.R
+printf "x1*x2/(x1+x2)\nx1*x2*x3*x4\n" > f.txt
 
 for x in x1 x2 ; do
 	## the awk command just prints the result as a comma separated R character array: dfdx[12] <- c(LIST)
