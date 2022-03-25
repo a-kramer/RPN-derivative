@@ -8,12 +8,21 @@ listed below). The shell script [ode.sh](ode.sh) orchestrates the
 creation of a gsl_odeiv2 C source file for this model. The script
 creates some intermediate files that can be inspected afterwards.
 
-Usage: 
+Usage:
 
 ```sh
-$ cd example 
+$ cd examples
 $ ./ode.sh > DemoModel_gvf.c
 ```
+or
+
+```sh
+$ cd examples
+$ make
+```
+
+The script creates intermediate file that may be helpful to find
+errors. These intermediate can be deleted with `make clean`.
 
 ## Reactions
 
@@ -34,7 +43,7 @@ molecule. The `+` signs above are symbolic and mean something like
 _react together_.
 
 Each word potentially corresponds to a state variable, unless some
-method of model reduction is used before writing the ODE. 
+method of model reduction is used before writing the ODE.
 
 The values of the state variables are the concentrations of the
 reacting molecules. We will no distinguish between the molecule symbol
@@ -48,8 +57,9 @@ by a reaction kinetic (e.g. the law of mass action).
 ## ODE
 
 Each line in [ODE.txt](ODE.txt) represents a line of an ordinary
-differential equation (`dy[i]/dt`). It is phrased in terms of reaction
-fluxes (algebraic expressions of state variables and parameters).
+differential equation (a value of `dy[i]/dt`). It is phrased in terms
+of reaction fluxes (algebraic expressions of state variables and
+parameters).
 
 ## Variables
 
@@ -63,9 +73,10 @@ into files named `Jac_%i.txt` where the placeholder `%i` corresponds
 to the column number.
 
 The derivative `df[2](t,y)/dy[3]` can be found in file `Jac_3.txt` on
-line 2 (here all numbering starts with 1). 
+line 2 (here all numbering starts with 1); `make clean` will delete
+`Jac_3.txt`.
 
-### Fluxes and their derivatives
+### Fluxes and their Derivatives
 
 To create the Jacobian files, the ode script first creates the
 _reaction flux_ derivatives, named `Flux_${sv}.txt` where `$sv` is
