@@ -11,19 +11,19 @@ while read sv; do
 	$RPN < ReactionFlux.txt | $D "$sv" | $S 5 | $IFX > Flux_${sv}.txt
 done < Variables.txt
 
-NF=`wc -l < ReactionFlux.txt` 
+NF=`wc -l < ReactionFlux.txt`
 NV=`wc -l < Variables.txt`
 
 
 for j in `seq 1 $NV`; do
-	cp ODE.txt Jac_${j}.txt			
+	cp ODE.txt Jac_${j}.txt
 	sv=`sed -n "${j}p" Variables.txt`
 	for i in `seq 1 $NF`; do
 		flux_sv=`sed -n -e "${i}p" Flux_${sv}.txt`
 		echo "d(flux)/d($sv) = $flux_sv" 1>&2
-		sed -i -e "s/ReactionFlux$((i-1))/${flux_sv}/g" Jac_${j}.txt
+		sed -i.rm -e "s/ReactionFlux$((i-1))/${flux_sv}/g" Jac_${j}.txt
 	done
-done	
+done
 
 # write a gsl ode model file:
 
@@ -60,7 +60,8 @@ EOF
 awk '{print "\tdouble " $0 "=p_[" NR-1 "];"}' ParNames.txt
 awk '{print "\tdouble " $0 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
-for j in `seq 1 $NV`; do 
+for j in `seq 1 $NV`; do
+	echo "/* column $j (df/dy_$((j-1))) */"
 	awk -v n=$NV -v j=$j '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' Jac_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
