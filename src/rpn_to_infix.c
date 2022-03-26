@@ -68,7 +68,7 @@ void to_infix(struct ll *pn){
 int main(int argc, char *argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
-	char *p, *s;
+	char *p;
 	ssize_t m=0;
 	const char delim[]=" ";
 	struct ll *r=NULL;
@@ -95,9 +95,8 @@ int main(int argc, char *argv[]){
 		if (d>0) safety_val=d;
 	}
 	/* read from stdin */
-	while ((m=getline(&rpn,&n,stdin))>0 && !feof(stdin));
-		s=strchr(rpn,'\n');
-		if (s) s[0]='\0';
+	while ((m=getline(&rpn,&n,stdin))>0){
+		if (rpn[m-1]=='\n') rpn[m-1]='\0';
 		p=strtok(rpn,delim);
 		/* init */
 		r=NULL;

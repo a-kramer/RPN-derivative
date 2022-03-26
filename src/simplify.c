@@ -347,28 +347,25 @@ int main(int argc, char* argv[]){
 	if (argc==2){
 		N=strtol(argv[1],NULL,10);
 	}
-	do{
-		m=getline(&rpn,&n,stdin);
-		if (m>0 && !feof(stdin)){
-			rpn[m-1]='\0';
-			p=strtok(rpn,delim);
-			/* init */
-			r=NULL;
-			res=NULL;
-			while (p){
-				ll_push(&r,symbol_alloc(p));
-				p=strtok(NULL,delim);
-			}
-			if (r && balanced(r)){
-				for (i=0; i<N; i++){
-					res=simplify(r);
-					if (i<N-1) r=ll_reverse(res);
-				}
-			}
-			rpn_print(res);
-			printf("\n");
-			ll_free(&res);
+	while ((m=getline(&rpn,&n,stdin))>0){
+		if (rpn[m-1]=='\n') rpn[m-1]='\0';
+		p=strtok(rpn,delim);
+		/* init */
+		r=NULL;
+		res=NULL;
+		while (p){
+			ll_push(&r,symbol_alloc(p));
+			p=strtok(NULL,delim);
 		}
-	} while (!feof(stdin));
+		if (r && balanced(r)){
+			for (i=0; i<N; i++){
+				res=simplify(r);
+				if (i<N-1) r=ll_reverse(res);
+			}
+		}
+		rpn_print(res);
+		printf("\n");
+		ll_free(&res);
+	}
 	return EXIT_SUCCESS;
 }

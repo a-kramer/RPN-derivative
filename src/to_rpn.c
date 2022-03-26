@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
 {
 	size_t n=20;
 	char *infix=malloc(n);
-	size_t m=0;
+	long m=0;
 	struct ll* rpn;
-	while ((m=getline(&infix,&n,stdin))>0 && !feof(stdin)){
-		infix[m-1]='\0';
+	while ((m=getline(&infix,&n,stdin))>0) {
+		if (infix[m-1]=='\n') infix[m-1]='\0';
 		rpn=infix_to_rpn(infix);
 		rpn_print(rpn);
 		putchar('\n');

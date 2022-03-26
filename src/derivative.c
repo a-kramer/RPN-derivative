@@ -178,7 +178,7 @@ int main(int argc, char* argv[]){
 	size_t n=20;
 	char *rpn=malloc(n);
 	char *p;
-	size_t m=0;
+	ssize_t m=0;
 	char *x;
 	const char delim[]=" ";
 	struct ll *pn=NULL; /* polish notation expression */
@@ -186,8 +186,8 @@ int main(int argc, char* argv[]){
 	if (argc>1){
 		x=argv[1];
 		assert(isalpha(x[0]));
-		while ((m=getline(&rpn,&n,stdin))>0 && !feof(stdin)){
-			rpn[m-1]='\0';
+		while ((m=getline(&rpn,&n,stdin))>0){
+			if (rpn[m-1]=='\n') rpn[m-1]='\0';
 			p=strtok(rpn,delim);
 			pn=NULL;
 			while (p){
