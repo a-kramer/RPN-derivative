@@ -76,6 +76,12 @@ test_string_eq "derivative of '-1 a * t * @exp'" "$RES" '-1 a * t * @exp -1 a * 
 [ -f bin/derivative ] && RES=`echo "x y *" | D y `
 test_string_eq "derivative of 'x y *' w.r.t y" "$RES" '0 y * x 1 * +'
 
+[ -f bin/derivative ] && RES=`printf "x y *" | D y `
+test_string_eq 'missing newline byte is fine' "$RES" '0 y * x 1 * +'
+
+[ -f bin/to_rpn ] && RES=`printf "x" | RPN `
+test_string_eq 'input can be without operators' "$RES" 'x'
+
 [ -f bin/to_rpn ] && RES=`echo 'a+b' | RPN`
 test_string_eq "rpn of 'a+b'" "$RES" 'a b +'
 
@@ -126,23 +132,42 @@ test_float_eq "taylor(@exp,t,4) at t=0.1" "$D1" "$D2"
 
 
 OCTAVE="`which octave-cli`"
-
 if [ "$OCTAVE" ]; then
 cat<<EOF
 
-(3) compare to numerical solutions via 'octave'
-    `which octave`
-    math functions are allowed
-    conversion to infix notation required
+(3a) compare to numerical solutions via 'octave'
+     `which octave`
+     math functions are allowed
+     conversion to infix notation required
 EOF
 
- F="@exp(0.5*@pow(x-m,2)/(s*s))"
+ F="@exp(-0.5*@pow(x-m,2)/(s*s))"
  F_OCTAVE=`echo "$F" | sed -E -e 's/@//g' -e 's/pow\(([^,]+),([^\)]+)\)/(\1)^(\2)/g'`
  DF=`echo "$F" | RPN | D x | SY 6 | IFX`
- FIN_DIFF=`echo "m=1; s=0.8; f=@(x) $F_OCTAVE; x0=2; h=sqrt(abs(f(x0))*1e-14); assert((h/x0)<1e-3 && (h/x0)>1e-15); printf('%g',(f(x0+h)-f(x0-h))/(2*h));" | octave-cli`
+ FIN_DIFF=`echo "m=1; s=0.8; f=@(x) $F_OCTAVE; x0=2; h=sqrt(abs(f(x0))*1e-14); assert((h/x0)<1e-2 && (h/x0)>1e-15); printf('%g',(f(x0+h)-f(x0-h))/(2*h));" | octave-cli`
  DF_OCTAVE=`echo "$DF" | sed -E -e 's/@//g' -e 's/pow\(([^,]+),([^\)]+)\)/(\1)^(\2)/g'`
  EXACT=`echo "m=1; s=0.8; df=@(x) $DF_OCTAVE; x0=2; printf('%g',df(x0));" | octave-cli`
  printf "%${W1}s  %${W2}s  %${W2}s\n" "TEST" "DERIVATIVE" "FINITE DIFFERENCES"
- test_float_eq "$F at x=2" "$EXACT" "$FIN_DIFF"
+ test_float_eq "$F | x=2" "$EXACT" "$FIN_DIFF"
+fi
+
+RSCRIPT=`which Rscript`
+if [ "$RSCRIPT" ]; then
+cat<<EOF
+
+(3b) compare to numerical solutions via 'R'
+     `which Rscript`
+     math functions are allowed
+     conversion to infix notation required
+EOF
+
+ F="@exp(-0.5*@pow(x-m,2)/(s*s))"
+ F_R=`echo "$F" | sed -E -e 's/@//g' -e 's/pow\(([^,]+),([^\)]+)\)/(\1)^(\2)/g'`
+ DF=`echo "$F" | RPN | D x | SY 6 | IFX`
+ FIN_DIFF=`Rscript -e "m<-1; s<-0.8; f<-function(x) {return($F_R)}; x0<-2; h<-sqrt(abs(f(x0))*1e-14); stopifnot((h/x0)<1e-2 && (h/x0)>1e-15); cat(sprintf('%g',(f(x0+h)-f(x0-h))/(2*h)))"`
+ DF_R=`echo "$DF" | sed -E -e 's/@//g' -e 's/pow\(([^,]+),([^\)]+)\)/(\1)^(\2)/g'`
+ EXACT=`Rscript -e "m<-1; s<-0.8; df<- function(x) {return($DF_R)}; x0<-2; cat(sprintf('%g',df(x0)))"`
+ printf "%${W1}s  %${W2}s  %${W2}s\n" "TEST" "DERIVATIVE" "FINITE DIFFERENCES"
+ test_float_eq "$F | x=2" "$EXACT" "$FIN_DIFF"
 fi
 
