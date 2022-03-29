@@ -39,4 +39,6 @@ install: bin/derivative bin/simplify bin/to_rpn bin/to_infix man/*.1
   install man/*.1 $(MANPREFIX)  && gzip -f $(MANPREFIX)/*.1
 
 uninstall:
-	for f in derivative simplify to_rpn to_infix ; do rm $(PREFIX)/$$f && rm $(MANPREFIX)/$${f}.1.gz ; done
+	for f in derivative simplify to_rpn to_infix ; do \
+   rm $(PREFIX)/$$f && rm $(MANPREFIX)/$${f}.1.gz ; \
+  done

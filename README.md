@@ -28,16 +28,9 @@ much about the former and print a warning about the latter).
 An unbalanced expression produces an empty line in the output of any
 program in this repository (or possibly a line with an error message).
 
-All programs read from stdin, and each line must be terminated with `\n` (`echo` does that automatically):
-
-```sh
-$ printf "a x *" | derivative x
-$ printf "a x *\n" | derivative x
-0 x * a 1 * +
-```
-
-In any case, we try to keep the line numbers of input and output the
-same (the derivative of input line *n* will be in output line *n*).
+All programs read from stdin. In any case, we try to keep the line
+numbers of input and output the same (the derivative of input line *n*
+will be in output line *n*).
 
 Although it is of course possible to use `derivative` and `simplify`
 by themselves, you can also use `to_rpn` to convert more conventional
@@ -259,13 +252,13 @@ Currently: `@exp, @log, @sin, @cos, @pow`.
 supported. All logical opertors are missing, bitwise operators and integer arithmetic
 (e.g. remainder/modulus) as they are difficult to differentiate.
 2. There are very few checks to see if the input is a _valid_ RPN expression.
-3. ~All variables must be one letter~ the maximum length of variables can be set at compile time. 
-4. Conversion back into infix notation writes many parentheses; this is probably fine.
-5. Because `simplify` doesn't reliably reduce all fractions, some perfectly finite derivatives cannot be evaluated at _x=0_.
+3. ~All variables must be one letter~ the maximum length of variables can be set at compile time.
+4. Conversion back into infix notation writes many unnecessary parentheses; this is probably fine.
+5. Because `simplify` doesn't reliably reduce all fractions, some perfectly finite derivatives cannot be evaluated at, e.g.: _x=0_.
 
-This tool-set will never become a scripting language like `dc`, with registers
-and user defined macros (or other things that are too hard for me to
-implement).
+This tool-set will never become a scripting language like `dc`, with
+multiple registers and user defined macros (or other things that are
+too hard for me to implement).
 
 ## Documentation
 
@@ -288,9 +281,9 @@ is ~perfectly~ well suited to check output from `bin/derivative` before it
 has been converted to R or C code (see the next Section).
 
 There are two shell scripts in the `tests` folder that help with the
-testing: 
+testing:
 
-1. [numerical.sh](tests/numerical.sh) 
+1. [numerical.sh](tests/numerical.sh)
 2. [eval.sh](tests/eval.sh)
 
 The first script calculates the finite difference approximation of a
