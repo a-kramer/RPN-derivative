@@ -31,7 +31,7 @@ int word_length(char *s){
 	char *p=s;
 	int k=0;
 	if (p){
-		while (*p && (isalnum(*p) || strchr("@_",*p)!=NULL)){
+		while (*p!='\0' && (isalnum(*p) || strchr("@_",*p)!=NULL)){
 			p++;
 			k++;
 		}

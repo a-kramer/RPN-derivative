@@ -46,7 +46,7 @@ commands:
 ```bash
 $ mkdir bin
 $ make
-$ make test 
+$ make test
 ```
 
 These commands will create the binaries `derivative`, `simplify`, and `ll_test`; `make test` will run [test.sh](tests/test.sh).
@@ -94,7 +94,7 @@ Polish notation:
 $ bin/to_rpn < math.txt
 ```
 
-This program takes no command line arguments. 
+This program takes no command line arguments.
 
 #### Caveat: Ambiguity and Spacing
 
@@ -105,7 +105,7 @@ creates an ambiguity with the unary minus (and plus). Consequently,
 some strings are not interpreted right: `1-2` is read as `+1` and `-2`
 (a sequence of two numbers), but `1 - 2` is understood correctly as
 the operation _minus(1,2)_, `a-b` works perfectly fine because `b` is
-not a valid number. 
+not a valid number.
 
 The `dc` program resolves this ambiguity by using the underscore to
 denote negative numbers: `dc -e '_1 1 + p'` prints 0; but, we don't do that
@@ -139,7 +139,7 @@ simplification will be repeated _n_ times. This is equivalent to
 repeated calls to `simplify`:
 
 ```sh
-$ echo "x 0 0 + +" | simplify 
+$ echo "x 0 0 + +" | simplify
 x 0 +
 $ echo "x 0 0 + +" | simplify | simplify
 x
@@ -165,23 +165,35 @@ x a b + * a b + a b + * /
 
 which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so
 `x/(a+b)`). This is almost right (technically correct, but
-unnecessary). Currently, no amount of simplifying will reduce the
-fraction unless it reduces to 1; `simplify` doesn't really know math,
+unnecessary). This fraction is reduced correctly, now ~Currently, no amount of simplifying will reduce the
+fraction unless it reduces to 1;~ This is still true: `simplify` doesn't really know math,
 it merely tries some simple pattern recognition.
 
-An easier example `d[x*y*(y+2)]/dy`:
+If you encounter a specific case where you automate code creation for
+a computational task and it always produces a difficult type of
+fraction, you can use `sed` and regular expressions to further
+manipulate the result. The file
+[reduce_fraction.sed](sh/reduce_fraction.sed) contains some examples:
+
+```sh
+$ echo '(pow(x,3)*(4/x))' | sed -E -f sh/reduce_fraction.sed
+(pow(x,(3)-1)*4)
+$ echo '(pow(x,3)/x)' | sed -E -f sh/reduce_fraction.sed
+(pow(x,(3)-1))
+```
+
+
+#### a simple case
+
+In this example `d[x*y*(y+2)]/dy`, the derivative is just not
+problematic at all and does not require any special treatment:
 
 ```sh
 $ echo "x y * y 2 + *" | derivative y | simplify 2
-```
-
-outputs:
-```
 x y 2 + * x y * +
 ```
 
-which is `x*(y+2) + x*y` (OK). In some cases, it may be easy enough to
-parse the output with `sed` and get rid of unnecessary terms.
+which is `x*(y+2) + x*y` (OK).
 
 ### rpn to infix
 
@@ -192,35 +204,64 @@ converted back into infix notation like this:
 $ bin/to_infix < rpn_math.txt
 ```
 
-#### Optional parameters 
+#### Optional parameters
 
 `-s` (safe fractions)
 `--safe-fractions=1e-10`
 
-This option is useful when denominators are known to be
-non-negative. It will add a small safety constant to denominators to
-prevent division by zero. This could of course be wrong. It is a
-safety measure for cases where reduction of fractions didn't work:
+This option is useful when denominators are known/required/assumed to
+be non-negative. With `-s`, `to_infix` will add a small safety
+constant to denominators to prevent division by zero. This could of
+course be terribly wrong, because it does change the printed
+expression, we assume that the user is aware of the risks.
+
+In part, this is a safety measure for cases where reduction of fractions didn't
+work:
 
 ```
 x*x/x
 ```
 
-is a perfectly fine fraction that cannot be naïvely evaluated
-numerically, it has to be reduced to `x`. But,
+The above is a perfectly fine fraction, but it cannot be naïvely evaluated at *x*=0
+(numerically); it *has* to be reduced to `x`. In contrast, a similar fraction
 
 ```
 x*x/(1e-16 + x)
 ```
 
-would work numerically without smart fraction reduction. By default
-the safety constant is the smallest positive double precision floating
-point value.
+would work numerically without smart fraction reduction for all arguments *x*>0.
+And finally the expression:
+
+```
+x*x/(1e-16 + fabs(x))
+```
+
+works for all *x*. So, a procedure now can call the resulting math
+more carelessly and not crash while doing so.
+
+By default the safety constant is the smallest positive double
+precision floating point value (rounded by printing):
+
+```sh
+echo 'x x * x /' | to_infix -s
+((x*x)/(2.22507e-308 + fabs(x)))
+```
+
+Obviously, this should only be used when stability is more important
+than accuracy: i.e. the function must never crash. This is sometimes
+the case with optimization (a model is called thousands of times in a
+row, with sketchy trial arguments). And the above example is for
+illustration only, because:
+
+```sh
+echo 'x x * x /' | simplify 2 | to_infix
+x
+```
 
 #### Example
 
-Like all other programs in this repository, `to_infix` reads from standard input and writes to
-standard output.
+Like all other programs in this repository, `to_infix` reads from
+standard input and writes to standard output.
 
 ```bash
 $ echo "@pow(t,3)" | to_rpn | derivative t | simplify 4 | to_infix
@@ -240,11 +281,11 @@ with variable names. It would have been possible to distinguish
 functions and variable names by string matching and reserving a list
 of names for functions.
 
-But, a function may very well not yet be implemented and thus be
-understood as a variable name. But with a leading `@` an error will
-occur if the function is not understood.
+A function may be not implemented (yet) and thus its name be
+understood as a variable name (e.g. sinh). But with a leading `@` an error will
+occur if the function is not known.
 
-Currently: `@exp, @log, @sin, @cos, @pow`.
+Currently: `@exp, @log, @sin, @cos, @pow` are known.
 
 ## Limitations: Many
 
@@ -323,6 +364,4 @@ $ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
 accuracy, we set *dc*'s precision (*k*) to 10 digits: `dc -e '3 2 /
 p'` prints `1` (because floor(3/2) is 1); `dc -e '3 k 3 2 / p'` prints
 `1.500` with precision _k_=3.
-
-
 

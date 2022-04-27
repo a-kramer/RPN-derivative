@@ -19,7 +19,7 @@ match_func(const char *s) /* a \0 terminated string, like "exp" or "sin" */
 	assert(s);
 	int i;
 	int n=sizeof(fname)/sizeof(char*);
-	for (i=0;i<n;i++){
+	for (i=0;i<n-1;i++){
 		if (strcmp(s,fname[i])==0) break;
 	}
 	return i;
@@ -69,9 +69,8 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	z=(len>z)?z:len;
 	p=s;
 	double d=strtod(s,&p);
-	/* fprintf(stderr,"length(%s)=«%li»\n",s,len); */
 	if (s==p){
-    if (len==1 && c && strchr("+-*/^",c)){
+		if (len==1 && c && strchr("+-*/^",c)){
 			n->type=symbol_operator;
 			n->op=c;
 			n->nargs=2;
@@ -79,6 +78,10 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 			n->type=symbol_function;
 			n->f=match_func(s+1);
 			n->nargs=fnargs[n->f];
+			if (n->f == f_NA) {
+				fprintf(stderr,"[%s] unimplemented function: «%s»\n",__func__,s);
+				abort();
+			}
 		} else if (isalpha(c)){
 			n->type=symbol_var;
 			*((char*) memcpy(n->name,s,z)+z)='\0';
@@ -95,7 +98,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	return n;
 }
 
-/* Given a function enumerator, this return's the function's name */
+/* Given a function enumerator, this returns the function's name */
 const char* /* pointer to the right entry in a global array of strings */
 function_name(enum func f) /* one of the known function enum values */ {
   return fname[f];
@@ -150,16 +153,16 @@ is_double(
 	return z;
 }
 
-/* This function compares the symbol to `y` and returns 
+/* This function compares the symbol to `y` and returns
 ```
   || case |value|
   ||------|-----|
   ||  s>y |  1  |
   ||  s<y | -1  |
   ||  s=y |  0  |
-  ||other | -2  |    
+  ||other | -2  |
 ```
-  
+
 If the symbol isn't a number an error code is
 returned (not -1, 0, 1). */
 int /* comparison result */
