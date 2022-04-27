@@ -78,10 +78,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 			n->type=symbol_function;
 			n->f=match_func(s+1);
 			n->nargs=fnargs[n->f];
-			if (n->f == f_NA) {
-				fprintf(stderr,"[%s] unimplemented function: «%s»\n",__func__,s);
-				abort();
-			}
+			if (n->f == f_NA) fprintf(stderr,"[%s] unimplemented function: «%s»\n",__func__,s);
 		} else if (isalpha(c)){
 			n->type=symbol_var;
 			*((char*) memcpy(n->name,s,z)+z)='\0';
