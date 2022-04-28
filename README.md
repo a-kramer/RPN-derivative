@@ -254,7 +254,7 @@ row, with sketchy trial arguments). And the above example is for
 illustration only, because:
 
 ```sh
-echo 'x x * x /' | simplify 2 | to_infix
+$ echo 'x x * x /' | simplify 2 | to_infix
 x
 ```
 
@@ -328,12 +328,13 @@ testing:
 2. [eval.sh](tests/eval.sh)
 
 The first script calculates the finite difference approximation of a
-derivative a given an rpn expression for `f`: `(f(x+h)-f(x-h))/(d*h)`;
+derivative a given an rpn expression for `f`: `(f(x+h)-f(x-h))/(2*h)`;
 the second script evaluates any rpn expression using `dc` (it does all
 necessary substitutionsso that `dc` will accept the expression), e.g.:
 
 ```sh
 $ echo "x a @pow" | tests/numerical.sh x 2 0.0001 | tests/eval.sh a=3
+12.0000005000
 ```
 
 The above instruction will calculate the finite difference at _x_=2
