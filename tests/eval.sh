@@ -11,7 +11,7 @@
 # (3) dc wants only numbers in the expression, obviously
 
 while read rpn; do
- # address (1)	
+ # address (1)
  rpn=`echo "$rpn" | sed -E -e 's/@pow/^/g' -e 's/-([.0-9])/_\1/g' `
  # address (3)
  [ $# -ge 1 ] && for a in $@ ; do rpn=`echo "$rpn" | sed -e "s/${a%=*}/${a#*=}/g"` ; done
