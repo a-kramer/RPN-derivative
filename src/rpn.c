@@ -14,8 +14,8 @@ int depth(struct ll *pn){
 			else return -1;
 			n--;
 			d++;
-			n+=NARGS(pn);			
-		}		
+			n+=NARGS(pn);
+		}
 	}
 	return d;
 }
@@ -71,12 +71,12 @@ rpn_copy(struct ll *a) /* list to copy */
 }
 
 /* checks if list of expression can be evaluated with no unused
- * operands 
+ * operands
  */
 int /* truth value */
 balanced(struct ll *pn) /* list of expressions, starting with a function or operator (Polish notation) */
 {
 	int d=depth(pn);
 	int l=ll_length(pn);
-  return (d==l-1);
+	return (d==l-1);
 }
