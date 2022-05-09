@@ -8,6 +8,9 @@ Specifically, this project aims to automatically calculate the
 Jacobian of a vector valued function used as right hand side in
 ordinary differential equations.
 
+There are many software packages that can do this and much more
+(computer algebra systems). Here is a [list of alternatives](alternatives.md).
+
 ## Summary
 
 Especially the `derivative` program requires the input to be math in
