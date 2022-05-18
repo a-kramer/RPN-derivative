@@ -9,11 +9,17 @@ MODEL=${1:-"DemoModel"}
 while read sv value unit rest; do
 	echo "sv: $sv (with initial value: $value $unit)" 1>&2
 	$RPN < ReactionFlux.txt | $D "$sv" | $S 5 | $IFX > Flux_${sv}.txt
+	$RPN < Function.txt | $D "$sv" | $S 5 | $IFX > dF_d${sv}.txt
 done < Variables.txt
+
+
+while read par value rest; do
+	echo "parameter: $par (with default value: $value)"
+	$RPN < Function.txt | $D "$par" | $S 5 | $IFX > dF_d${par}.txt
+done < Parameters.txt
 
 NF=`wc -l < ReactionFlux.txt`
 NV=`wc -l < Variables.txt`
-
 
 for j in `seq 1 $NV`; do
 	cp ODE.txt Jac_${j}.txt
