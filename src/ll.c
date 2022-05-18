@@ -65,10 +65,10 @@ ll_pop(struct ll **L) /* linked list (address of pointer to first element) */
 	void *r=NULL;
 	struct ll *a;
 	if (*L){
-	 r=(*L)->value;
-	 a=*L;
-	 (*L)=(*L)->next;
-   free(a);
+		r=(*L)->value;
+		a=*L;
+		(*L)=(*L)->next;
+		free(a);
 	}
 	return r;
 }
@@ -81,7 +81,7 @@ ll_cut(
 {
 	struct ll *p=a;
 	struct ll *b=NULL;
-  while (p && --k>0){
+	while (p && --k>0){
 		p=p->next;
 	}
 	if (p) {
@@ -234,7 +234,7 @@ ll_rm(
 {
 	struct ll **tmp=ac;
 	struct ll *cf;
-  while (*tmp && (*tmp)!=c){
+	while (*tmp && (*tmp)!=c){
 		tmp=&((*tmp)->next);
 	}
 	while (c && n--){

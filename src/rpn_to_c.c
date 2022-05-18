@@ -68,7 +68,7 @@ write_code(struct ll *rpn)
 			break;
 		default:
 			break;
-		}	
+		}
 	}
 	return k;
 }
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
 			if (s) s[0]='\0';
 			p=strtok(rpn,delim);
 			/* init */
-			r=NULL; 
+			r=NULL;
 			while (p){
 				ll_append(&r,symbol_alloc(p));
 				p=strtok(NULL,delim);
