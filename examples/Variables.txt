@@ -1,6 +1,6 @@
-A
-B
-C
-AB
-AC
-ABC
+A 1000 micromole/liter
+B 10 micromole/liter
+C 10 micromole/liter
+AB 0 micromole/liter
+AC 0 micromole/liter
+ABC 0 micromole/liter

@@ -6,8 +6,8 @@ IFX=../bin/to_infix
 
 MODEL=${1:-"DemoModel"}
 
-while read sv; do
-	echo "sv: $sv" 1>&2
+while read sv value unit rest; do
+	echo "sv: $sv (with initial value: $value $unit)" 1>&2
 	$RPN < ReactionFlux.txt | $D "$sv" | $S 5 | $IFX > Flux_${sv}.txt
 done < Variables.txt
 
@@ -17,7 +17,7 @@ NV=`wc -l < Variables.txt`
 
 for j in `seq 1 $NV`; do
 	cp ODE.txt Jac_${j}.txt
-	sv=`sed -n "${j}p" Variables.txt`
+	sv=`awk -v n=$j 'NR == n {print $1}' Variables.txt`
 	for i in `seq 1 $NF`; do
 		flux_sv=`sed -n -e "${i}p" Flux_${sv}.txt`
 		echo "d(flux)/d($sv) = $flux_sv" 1>&2
@@ -41,8 +41,8 @@ int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 	if (!y_ || !f_) return ${NV};
 EOF
 
-awk '{print "\tdouble " $0 "=p_[" NR-1 "];"}' ParNames.txt
-awk '{print "\tdouble " $0 "=y_[" NR-1 "];"}' Variables.txt
+awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
+awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
 awk '{print "\tdouble ReactionFlux" NR-1 "=" $0 ";"}' ReactionFlux.txt
 awk '{print "\tf_[" NR-1 "] = " $0 ";"}' ODE.txt
@@ -57,8 +57,8 @@ int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void 
 	if (!y_ || !jac_) return ${NV}*${NV};
 EOF
 
-awk '{print "\tdouble " $0 "=p_[" NR-1 "];"}' ParNames.txt
-awk '{print "\tdouble " $0 "=y_[" NR-1 "];"}' Variables.txt
+awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
+awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
@@ -77,11 +77,34 @@ int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
 	if (!y_ || !func_) return `wc -l < Function.txt`;
 EOF
 
-awk '{print "\tdouble " $0 "=p_[" NR-1 "];"}' ParNames.txt
-awk '{print "\tdouble " $0 "=y_[" NR-1 "];"}' Variables.txt
+awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
+awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
 awk '{print "\tfunc_[" (NR-1) "] = " $0 ";"}' Function.txt
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
 
+cat<<EOF
+/* ode default parameters */
+int ${MODEL}_default(double t, void *par)
+{
+	double *p_=par;
+	if (!p_) return `wc -l < Parameters.txt`;
+EOF
+
+awk '{print "\tp_[" NR-1 "] = " $2 ";"}' Parameters.txt
+printf "\treturn GSL_SUCCESS;\n}\n"
+
+cat<<EOF
+/* ode initial values */
+int ${MODEL}_init(double t, double *y_, void *par)
+{
+	double *p_=par;
+	if (!y_) return ${NV};
+EOF
+
+awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
+printf "\t/* the initial value of y may depend on the parameters. */\n"
+awk '{print "\ty_[" NR-1 "] = " $2 ";"}' Variables.txt
+printf "\treturn GSL_SUCCESS;\n}\n"
