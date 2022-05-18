@@ -1,0 +1,10 @@
+kf_R0 1
+kr_R0 1
+kf_R1 1
+kr_R1 1
+kf_R2 1
+kr_R2 1
+kf_R3 1
+kr_R3 1
+kf_R4 1
+kr_R4 1
