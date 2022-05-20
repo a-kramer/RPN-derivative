@@ -14,12 +14,13 @@ done < Variables.txt
 
 
 while read par value rest; do
-	echo "parameter: $par (with default value: $value)"
+	echo "parameter: $par (with default value: $value)" 1>&2
 	$RPN < Function.txt | $D "$par" | $S 5 | $IFX > dF_d${par}.txt
 done < Parameters.txt
 
 NF=`wc -l < ReactionFlux.txt`
 NV=`wc -l < Variables.txt`
+NP=`wc -l < Parameters.txt`
 
 for j in `seq 1 $NV`; do
 	cp ODE.txt Jac_${j}.txt
@@ -34,9 +35,13 @@ done
 # write a gsl ode model file:
 
 cat<<EOF
-/* The error code indicates how to pre-allocate memory 
- * for output values such as \`f_\`. The _vf function returns 
- * the number of state variables, if any of the args are \`NULL\`. 
+#include <stdlib.h>
+#include <math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_odeiv2.h>
+/* The error code indicates how to pre-allocate memory
+ * for output values such as \`f_\`. The _vf function returns
+ * the number of state variables, if any of the args are \`NULL\`.
  * GSL_SUCCESS is returned when no error occurred.
  */
 
@@ -46,7 +51,7 @@ int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 	double *p_=par;
 	if (!y_ || !f_) return ${NV};
 EOF
-
+awk '{print "\tdouble " $1 "=" $2 ";"}' Constant.txt
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
@@ -62,7 +67,7 @@ int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void 
 	double *p_=par;
 	if (!y_ || !jac_) return ${NV}*${NV};
 EOF
-
+awk '{print "\tdouble " $1 "=" $2 ";"}' Constant.txt
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
@@ -82,7 +87,7 @@ int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
 	double *p_=par;
 	if (!y_ || !func_) return `wc -l < Function.txt`;
 EOF
-
+awk '{print "\tdouble " $1 "=" $2 ";"}' Constant.txt
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' Variables.txt
 awk '{print "\tdouble " $1 "=" $2 ";"}' ExpressionFormula.txt
@@ -98,7 +103,7 @@ int ${MODEL}_default(double t, void *par)
 	double *p_=par;
 	if (!p_) return `wc -l < Parameters.txt`;
 EOF
-
+awk '{print "\tdouble " $1 "=" $2 ";"}' Constant.txt
 awk '{print "\tp_[" NR-1 "] = " $2 ";"}' Parameters.txt
 printf "\treturn GSL_SUCCESS;\n}\n"
 
@@ -109,7 +114,7 @@ int ${MODEL}_init(double t, double *y_, void *par)
 	double *p_=par;
 	if (!y_) return ${NV};
 EOF
-
+awk '{print "\tdouble " $1 "=" $2 ";"}' Constant.txt
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' Parameters.txt
 printf "\t/* the initial value of y may depend on the parameters. */\n"
 awk '{print "\ty_[" NR-1 "] = " $2 ";"}' Variables.txt
