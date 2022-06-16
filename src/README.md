@@ -31,7 +31,7 @@ switching back and forth between Polish and reverse Polish notation.
 For derivatives, we first look at the operator (`+`) and then the
 operands it affects. To understand what an operator affects we
 calculate it's _depth_. The depth of `2 3 +` is 2, because 2 symbols
-to the right are affected by the `+` operator. The depth of `+` in `1
+to the left are affected by the `+` operator. The depth of `+` in `1
 2 3 * +` is 4, while the depth of `*` is 2.
 
 Most importantly: `derivative()`, `simplify()`, `depth()` need Polish
