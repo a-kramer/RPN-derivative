@@ -232,14 +232,15 @@ The above is a perfectly fine fraction, but it cannot be naïvely evaluated at *
 x*x/(1e-16 + x)
 ```
 
-would work numerically without smart fraction reduction for all arguments *x*>0.
+would work numerically without smart fraction reduction for all arguments *x* &ge; 0.
 And finally the expression:
 
 ```
 x*x/(1e-16 + fabs(x))
 ```
 
-works for all *x*. So, a procedure now can call the resulting math
+works for all *x* (but is not equal to the original x everywhere). 
+So, a procedure now can call the resulting math
 more carelessly and not crash while doing so.
 
 By default the safety constant is the smallest positive double
