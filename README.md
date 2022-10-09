@@ -41,12 +41,10 @@ math to rpn notation and `to_infix` to translate the result back.
 
 ## Compiling
 
-The default compiler in the [Makefile](Makefile) is
-[gcc](https://gcc.gnu.org/), but [tcc](https://repo.or.cz/tinycc.git)
-will also work. In the root directory of this repository these
-commands:
+Both [gcc](https://gcc.gnu.org/) and [tcc](https://repo.or.cz/tinycc.git)
+will work and have been used to compile these sources. In the root directory of this repository (parent of src):
 
-```bash
+```sh
 $ mkdir bin
 $ make
 $ make test
@@ -56,7 +54,7 @@ These commands will create the binaries `derivative`, `simplify`, and `ll_test`;
 
 The [symbol](src/symbol.h) component takes a macro that fixes the
 maximum length of variable names: `MAX_NAME_SIZE`. It can be defined on
-the command line, when compiling: `gcc -DMAX_NAME_SIZE=10 [...]`.
+the command line, when compiling: `gcc -DMAX_NAME_SIZE=10 [...]`, see the [Makefile](Makefile).
 
 Installation is optional, see this [note](note.md).
 
@@ -66,6 +64,8 @@ The default target directory for installation is `/usr/local/bin`:
 
 ```sh
 $ sudo make install
+$ # or
+$ doas make install
 ```
 
 Afterwards, these commands should work:
@@ -85,7 +85,7 @@ The programs in this repository are meant to be used via pipes:
 ```bash
 [...] | to_rpn | derivative x | simplify
 ```
-They all read _n_ lines from standard input (stdin) and write _n_ lines to standard output (stdout).
+They all read _n_ lines from standard input (stdin) and write _n_ lines to standard output (stdout) - unless something goes wrong.
 
 ### Conversion to RPN
 
@@ -277,6 +277,23 @@ There will be many superfluous parentheses to produce safe expressions
 be stripped from functions to make it easier to use the expressions
 elsewhere.
 
+## ODE code generator
+
+[sh/ode.sh](sh/ode.sh) is a more general c-code generating script. It
+assumes that the working directory contains text files (tsv files),
+with specific names and content:
+
+|File|Mandatory|Content|
+|---:|:-------:|:-----:|
+|Constant.txt|no|constant names and values|
+|Parameters.txt|yes|parameter names and values|
+|Variables.txt|yes|state variable names, initial values, and a unit or measurement|
+|Expression.txt|no|math expression, names and formulae|
+|ReactionFlux.txt|no|same as Expressions, but with automatic names|
+|Function.txt|no|terms that define a vector valued output function|
+
+See [sh/README.md](sh/README.md)
+
 ## Mathematical Functions
 
 To make it ~easy~ convenient to parse math expressions, standard math
@@ -293,6 +310,7 @@ Currently: `@exp, @log, @sin, @cos, @pow` are known.
 
 ## Limitations: Many
 
+0. There is no unary minus for variables: `-a+b` doesn't work, `b-a` does obviously as does `0-a+b`
 1. Very few operator symbols and functions are and will ever be
 supported. All logical opertors are missing, bitwise operators and integer arithmetic
 (e.g. remainder/modulus) as they are difficult to differentiate.

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -u
-
 MODEL=${1:-"DemoModel"}
 N=${2:-6}
 TMP=${3:-/dev/shm/ode_gen}
@@ -9,10 +7,23 @@ TMP=${3:-/dev/shm/ode_gen}
 # make sure the temp folder exists
 [ -d "${TMP}" ] || mkdir "${TMP}"
 
+CON=`find . -type f -regex ".*[Cc]onstants?\.\(txt\|tsv\)$" -print -quit`
+VAR=`find . -type f -regex ".*\([Ss]tate\)?[Vv]ariables?\.\(txt\|tsv\)$" -print -quit`
+PAR=`find . -type f -regex ".*\([Mm]odel\)?[Pp]arameters?\.\(txt\|tsv\)$" -print -quit`
+FUN=`find . -type f -regex ".*\([Oo]utput\)?[Ff]unctions?\.\(txt\|tsv\)$" -print -quit`
+FLX=`find . -type f -regex ".*\([Rr]eaction\)?[Ff]lux\(es\)?\.\(txt\|tsv\)$" -print -quit`
+EXP=`find . -type f -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.\(txt\|tsv\)$" -print -quit`
+ODE=`find . -type f -iregex ".*ode\.\(txt\|tsv\)$" -print -quit`
+
 # print some help if something is not right
-if [ -f "Variables.txt" -a -f "Parameters.txt" -a -f "ReactionFlux.txt" -a -f "ODE.txt" ]; then
-	echo "[$0] Using the files in this folder:" 1>&2
-	ls *.txt 1>&2
+if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
+	echo "[$0] Using these files:" 1>&2
+	echo "CON «$CON»" 1>&2
+	echo "PAR «$PAR»" 1>&2
+	echo "VAR «$VAR»" 1>&2
+	echo "EXP «$EXP»" 1>&2
+	echo "FUN «$FUN»" 1>&2
+	echo "ODE «$ODE»" 1>&2
 else
 (
 	echo "Usage: $0 [ModelName] [N] [TMP]"
@@ -53,25 +64,25 @@ while read sv value unit rest; do
 	echo "sv: $sv (with initial value: $value $unit)" 1>&2
 	to_rpn < ReactionFlux.txt | derivative "$sv" | simplify $N | to_infix > "${TMP}/dFlux_d${sv}.txt"
 	[ -f Function.txt ] && to_rpn < Function.txt | derivative "$sv" | simplify $N | to_infix > "${TMP}/dFunction_d${sv}.txt"
-done < Variables.txt
+done < "$VAR"
 
 while read par value rest; do
 	echo "parameter: $par (with default value: $value)" 1>&2
 	[ -f Function.txt ] && to_rpn < Function.txt | derivative "$par" | simplify $N | to_infix > "${TMP}/dFunction_d${par}.tx"
-done < Parameters.txt
+done < "$PAR"
 
 NF=`wc -l < ReactionFlux.txt`
 NV=`wc -l < Variables.txt`
 NP=`wc -l < Parameters.txt`
-if [ -f Expression.txt ] ; then
-	NE=`wc -l < Expression.txt`
+if [ -f "$EXP" ] ; then
+	NE=`wc -l < "$EXP"`
 else
 	NE=0
 fi
 
 # make a copy of ODE.txt, but with all Fluxes substituted
 EXODE="${TMP}/explicit_ode.txt"
-sed -r -e 's/(exp|sin|cos|tan)/@\1/g' -e 's/^-/0 - /g' ODE.txt > "$EXODE"
+sed -r -e 's/(exp|sin|cos|tan)/@\1/g' -e 's/^-/0 - /g' "$ODE" > "$EXODE"
 for j in `seq $NF -1 1`; do
 	flux=`sed -n -e "${j}p" ReactionFlux.txt`
 	sed -i.rm -e "s|ReactionFlux$((j-1))|(${flux})|g" "$EXODE"
@@ -85,14 +96,14 @@ if [ -f Expression.txt ]; then
 fi
 
 for j in `seq 1 $NV`; do
-	sv=`sed -n -e "${j}p" Variables.txt`
+	sv=`sed -n -e "${j}p" "$VAR"`
 	for i in `seq 1 $NV`; do
 		to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt"
 	done
 done
 
 for j in `seq 1 $NP`; do
-	par=`sed -n -e "${j}p" Parameters.txt`
+	par=`sed -n -e "${j}p" "$PAR"`
 	for i in `seq 1 $NV`; do
 		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt"
 	done
