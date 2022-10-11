@@ -7,13 +7,15 @@ TMP=${3:-/dev/shm/ode_gen}
 # make sure the temp folder exists
 [ -d "${TMP}" ] || mkdir "${TMP}"
 
-CON=`find . -type f -regex ".*[Cc]onstants?\.\(txt\|tsv\)$" -print -quit`
-VAR=`find . -type f -regex ".*\([Ss]tate\)?[Vv]ariables?\.\(txt\|tsv\)$" -print -quit`
-PAR=`find . -type f -regex ".*\([Mm]odel\)?[Pp]arameters?\.\(txt\|tsv\)$" -print -quit`
-FUN=`find . -type f -regex ".*\([Oo]utput\)?[Ff]unctions?\.\(txt\|tsv\)$" -print -quit`
-FLX=`find . -type f -regex ".*\([Rr]eaction\)?[Ff]lux\(es\)?\.\(txt\|tsv\)$" -print -quit`
-EXP=`find . -type f -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.\(txt\|tsv\)$" -print -quit`
-ODE=`find . -type f -iregex ".*ode\.\(txt\|tsv\)$" -print -quit`
+OPTTIONS="-type f"
+
+CON=`find . $OPTIONS -regex ".*[Cc]onstants?\.t[xs][tv]$" -print -quit`
+VAR=`find . $OPTIONS -regex ".*\([Ss]tate\)?[Vv]ariables?\.t[xs][vt]$" -print -quit`
+PAR=`find . $OPTIONS -regex ".*\([Mm]odel\)?[Pp]arameters?\.t[xs][vt]$" -print -quit`
+FUN=`find . $OPTIONS -regex ".*\([Oo]utput\)?[Ff]unctions?\.t[xs][vt]$" -print -quit`
+FLX=`find . $OPTIONS -regex ".*\([Rr]eaction\)?[Ff]lux(es)?\.t[xs][vt]$" -print -quit`
+EXP=`find . $OPTIONS -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.t[xs][vt]$" -print -quit`
+ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 
 # print some help if something is not right
 if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
