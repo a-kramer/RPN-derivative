@@ -28,6 +28,11 @@ int status=DemoModel_vf(t,y,f,par); /* returns GSL_SUCCESS (0) */
 
 This is to allow dynamic loading (dlopen/dlsym) and probing for system size.
 
+Note that the functions created by the script are not minimal, they
+declare lots of unused variables. The script declares all variables
+that could be used by the function (generally).  The removal is left to
+the compiler.
+
 ## Input Files
 
 This script assumes the presence of text files that describe a dynamic
@@ -41,7 +46,7 @@ some of the optional files are useful for that specific field (ReactionFluxes).
 The naming of the files is somewhat flexible. The names may be
 capitalized (`parameters` or `Parameters`). Plural forms are optional
 (`ReactionFormula.txt` or `ReactionFormulae.txt`). Longer and shorter
-names are possible (`Expression.txt` or `ExpressionFormula.txt`). 
+names are possible (`Expression.txt` or `ExpressionFormula.txt`).
 
 In addition, the text files may have names ending in tsv and use tabs
 as separators.
@@ -100,7 +105,7 @@ table, like all other files (a table for awk). May contain units
 
 [Example](../examples):
 
-```
+```tsv Variables.txt
 A 1000 micromole/liter
 B 10 micromole/liter
 C 10 micromole/liter
@@ -110,4 +115,96 @@ ABC 0 micromole/liter
 ```
 
 ### Expressions (optional)
+
+Expressions can also be called assignments, where a calculated
+mathematical expression is assigned to a name, so that it can be
+resued.
+
+Example for an expression in general:
+
+```c
+/* [...] */
+double exp_nxt = exp(-x*t); /* an expression */
+/* [...] */
+y[0] = -exp_nxt*0.5;
+y[1] = +exp_nxt*0.1;
+/* and so forth */
+```
+
+(or whatever).
+
+The contents of the file are: `name␣formula`, one expression per line (tab or space, both work).
+
+Expression.txt:
+
+```tsv Example.txt
+Activation	1/(1-exp(-(t-t_on)*inv_tau))
+```
+
+### ReactionFluxes
+
+ReactionFluxes are special expressions that don't need a name, the names are automatically `ReactionFlux0`, `ReactionFlux1`, where the number suffix (c style offset) is the `line number` - 1 (so, it starts at 0).
+
+```tsv Example.txt
+u * kf_R0 * A * B - kr_R0 * AB
+kf_R1 * A * C - kr_R1 * AC
+kf_R2 * AB * C - kr_R2 * ABC
+kf_R3 * AC * B - kr_R3 * ABC
+```
+
+ReactionFluxes will be treated exactly like *expressions*.
+
+### Functions
+
+Functions or rather *Output Functions* will be translated into on c
+function that returns a vector of values that depend on a state
+vector, parameters and time. These functions can be used to model
+observable quantities of an experiment (for such cases where the state
+of the system cannot be observed entirely).
+
+This is an example for an output function:
+
+```
+/* ode Functions F(t,y;p) */
+int DemoModel_func(double t, const double y_[], double *func_, void *par)
+{
+        double *p_=par;
+        if (!y_ || !func_) return 3;
+        double inv_tau=1000;
+        double kf_R0=p_[0];
+        double kr_R0=p_[1];
+        double kf_R1=p_[2];
+        double kr_R1=p_[3];
+        double kf_R2=p_[4];
+        double kr_R2=p_[5];
+        double kf_R3=p_[6];
+        double kr_R3=p_[7];
+        double kf_R4=p_[8];
+        double kr_R4=p_[9];
+        double kf_R5=p_[10];
+        double kr_R5=p_[11];
+        double u=p_[12];
+        double t_on=p_[13];
+        double A=y_[0];
+        double B=y_[1];
+        double C=y_[2];
+        double AB=y_[3];
+        double AC=y_[4];
+        double ABC=y_[5];
+        double Activation=1/(1-exp(-(t-t_on)*inv_tau));
+        func_[0] = A+AB+AC+ABC;
+        func_[1] = B+AB+ABC;
+        func_[2] = C+AC+ABC;
+        return GSL_SUCCESS;
+}
+
+```
+
+The above file has been created from this input:
+
+```tsv Functions.txt
+A+AB+AC+ABC
+B+AB+ABC
+C+AC+ABC
+```
 
