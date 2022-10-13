@@ -13,7 +13,6 @@ CON=`find . $OPTIONS -regex ".*[Cc]onstants?\.t[xs][tv]$" -print -quit`
 VAR=`find . $OPTIONS -regex ".*\([Ss]tate\)?[Vv]ariables?\.t[xs][vt]$" -print -quit`
 PAR=`find . $OPTIONS -regex ".*\([Mm]odel\)?[Pp]arameters?\.t[xs][vt]$" -print -quit`
 FUN=`find . $OPTIONS -regex ".*\([Oo]utput\)?[Ff]unctions?\.t[xs][vt]$" -print -quit`
-FLX=`find . $OPTIONS -regex ".*\([Rr]eaction\)?[Ff]lux\(es\)?\.t[xs][vt]$" -print -quit`
 EXP=`find . $OPTIONS -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.t[xs][vt]$" -print -quit`
 ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 
@@ -24,7 +23,6 @@ if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
 	echo "PAR «$PAR»" 1>&2
 	echo "VAR «$VAR»" 1>&2
 	echo "EXP «$EXP»" 1>&2
-	echo "FLX «$FLX»" 1>&2
 	echo "FUN «$FUN»" 1>&2
 	echo "ODE «$ODE»" 1>&2
 else
@@ -39,13 +37,10 @@ else
 	echo "                     expressions, state variables, parameters, and constants"
 	echo "           ODE.txt   mathematical formulae of how the ODE's right hand side is calculated using "
 	echo "                     fluxes, expressions, state variables, parameters, and constants"
-	echo "                     ReactionFluxes can be used by automatic names 'ReactionFlux[0-9]+', starting with 'ReactionFlux0'"
-	echo "                     e.g.: ReactionFlux0-ReactionFlux1+ReactionFlux13"
 	echo;
 	echo "Some files are optional:"
 	echo "     Constants.txt   names and values of constants, one name value pair per line, "
 	echo "                     separated by a tab"
-	echo "ReactionFluxes.txt   mathematical formulae of how each flux is calculated using "
 	echo "   Expressions.txt   a file with expression names and formulae (right hand side) comprising "
 	echo "                     constants, parameters, and state variables, separated by either '=' or tab"
 	echo "     Functions.txt   a file with named expressions (one per line) that define (observable) model outputs, "
@@ -64,18 +59,6 @@ if [ -z `which derivative` ]; then
 	echo "		alias derivative='./bin/derivative'"
 fi
 
-while read sv value unit rest; do
-	echo "sv: $sv (with initial value: $value $unit)" 1>&2
-	to_rpn < "$FLX" | derivative "$sv" | simplify $N | to_infix > "${TMP}/dFlux_d${sv}.txt"
-	[ -f "$FUN" ] && to_rpn < "$FUN" | derivative "$sv" | simplify $N | to_infix > "${TMP}/dFunction_d${sv}.txt"
-done < "$VAR"
-
-while read par value rest; do
-	echo "parameter: $par (with default value: $value)" 1>&2
-	[ -f "$FUN" ] && to_rpn < "$FUN" | derivative "$par" | simplify $N | to_infix > "${TMP}/dFunction_d${par}.tx"
-done < "$PAR"
-
-NF=`wc -l < "$FLX"`
 NV=`wc -l < "$VAR"`
 NP=`wc -l < "$PAR"`
 if [ -f "$EXP" ] ; then
@@ -87,15 +70,12 @@ fi
 # make a copy of ODE.txt, but with all Fluxes substituted
 EXODE="${TMP}/explicit_ode.txt"
 sed -r -e 's/(exp|sin|cos|tan)/@\1/g' -e 's/^-/0 - /g' "$ODE" > "$EXODE"
-for j in `seq $NF -1 1`; do
-	flux=`sed -n -e "${j}p" "$FLX"`
-	sed -i.rm -e "s|ReactionFlux$((j-1))|(${flux})|g" "$EXODE"
-done
 
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
-		expr=`sed -n -e "${j}p" "$EXP"`
-		sed -i.rm -e "s|ReactionFlux$((j-1))|(${expr})|g" "$EXODE"
+		ExpressionName=`awk -F '	' --assign j=$j -e 'NR==j {print $1}' "$EXP"`
+		ExpressionFormula=`awk -F '	' --assign j=$j -e 'NR==j {print $2}' "$EXP"`
+		sed -i.rm -e "s|${ExpressionName}|(${ExpressionFormula})|g" "$EXODE"
 	done
 fi
 
@@ -138,9 +118,8 @@ EOF
 awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-awk '{print "\tdouble ReactionFlux" NR-1 "=" $0 ";"}' "$FLX"
-awk '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
@@ -154,7 +133,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
 	awk -v n=$NV -v j=$j '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jac_Column_${j}.txt
@@ -172,10 +151,10 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$NP -v j=$j '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
+	awk -v n=$NP -v j=$j '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -192,7 +171,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 [ -f "$FUN" ] && awk '{print "\tfunc_[" (NR-1) "] = " $0 ";"}' "$FUN"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -222,6 +201,7 @@ printf "\t/* the initial value of y may depend on the parameters. */\n"
 awk '{print "\ty_[" NR-1 "] = " $2 ";"}' "$VAR"
 printf "\treturn GSL_SUCCESS;\n}\n"
 
+## cleaning procedure
 #if [ -d $TMP ]; then
 #	rm $TMP/*.rm
 #	rm $TMP/d*_d*.txt
