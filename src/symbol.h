@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #ifndef MAX_NAME_SIZE
-#define MAX_NAME_SIZE 12
+#define MAX_NAME_SIZE 64
 #endif
 
 enum symbol_type {symbol_number, symbol_var, symbol_operator, symbol_function, symbol_NA};
