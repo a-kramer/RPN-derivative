@@ -239,7 +239,7 @@ And finally the expression:
 x*x/(1e-16 + fabs(x))
 ```
 
-works for all *x* (but is not equal to the original x everywhere). 
+works for all *x* (but is not equal to the original x everywhere).
 So, a procedure now can call the resulting math
 more carelessly and not crash while doing so.
 

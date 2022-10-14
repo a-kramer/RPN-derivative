@@ -1,8 +1,8 @@
-# ODE code Generator for the GSL solver suite
+# ODE code Generator for the GSL solver suite `<gsl/gsl_odeiv2>`
 
 The [GNU Scientific
 Library](https://www.gnu.org/software/gsl/doc/html/ode-initval.html)
-defines function interfaces for an ODE system.
+defines function interfaces for an ordinary differential equation (ODE) system.
 
 The script [ode.sh](./ode.sh) generates these functions.
 
@@ -15,8 +15,9 @@ buffers. For the demo model in [../examples/](../examples), this is:
 double t=12;
 int status=DemoModel_vf(t,NULL,NULL,NULL); /* returns 6 */
 ```
+So, we would make sure to allocate `sizeof(double)*6` bytes for `f` and `y`.
 
-whereas:
+A normal call:
 
 ```c
 double t=12;
@@ -141,20 +142,7 @@ Expression.txt:
 Activation	1/(1-exp(-(t-t_on)*inv_tau))
 ```
 
-### ReactionFluxes
-
-ReactionFluxes are special expressions that don't need a name, the names are automatically `ReactionFlux0`, `ReactionFlux1`, where the number suffix (c style offset) is the `line number` - 1 (so, it starts at 0).
-
-```tsv Example.txt
-u * kf_R0 * A * B - kr_R0 * AB
-kf_R1 * A * C - kr_R1 * AC
-kf_R2 * AB * C - kr_R2 * ABC
-kf_R3 * AC * B - kr_R3 * ABC
-```
-
-ReactionFluxes will be treated exactly like *expressions*.
-
-### Functions
+### Functions (optional)
 
 Functions or rather *Output Functions* will be translated into on c
 function that returns a vector of values that depend on a state
