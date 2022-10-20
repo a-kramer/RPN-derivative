@@ -32,12 +32,12 @@ An unbalanced expression produces an empty line in the output of any
 program in this repository (or possibly a line with an error message).
 
 All programs read from stdin. In any case, we try to keep the line
-numbers of input and output the same (the derivative of input line *n*
-will be in output line *n*).
+numbers of input and output on `stdout` the same (the derivative of input line *n*
+will be in output line *n*). There may be output on `stderr`, so redirection is necessary: `2>error.log`.
 
 Although it is of course possible to use `derivative` and `simplify`
 by themselves, you can also use `to_rpn` to convert more conventional
-math to rpn notation and `to_infix` to translate the result back.
+math to rpn notation and `to_infix` to translate the result back. All standard math functions must have an `@` to mark them as functions: `-1 x * @exp` is equivalent to `exp(-x)` in normal notation. This may change in the future.
 
 ## Compiling
 
@@ -64,7 +64,7 @@ The default target directory for installation is `/usr/local/bin`:
 
 ```sh
 $ sudo make install
-$ # or
+$ # or perhaps
 $ doas make install
 ```
 
@@ -98,6 +98,11 @@ $ bin/to_rpn < math.txt
 ```
 
 This program takes no command line arguments.
+If the math expressions come in larger numbers (or from a pipe), from a source that just uses function names without any `@` signs, it is probably convenient to do sth like this on the input:
+```sh
+sed -r  's/(exp|log|sin|cos|tan)/@\1/g' original_input.txt | to_rpn
+```
+to replace `exp` with `@exp` (and similar).
 
 #### Caveat: Ambiguity and Spacing
 
@@ -108,14 +113,14 @@ creates an ambiguity with the unary minus (and plus). Consequently,
 some strings are not interpreted right: `1-2` is read as `+1` and `-2`
 (a sequence of two numbers), but `1 - 2` is understood correctly as
 the operation _minus(1,2)_, `a-b` works perfectly fine because `b` is
-not a valid number.
+not a valid number. The bad: unary minus does not work at all for variables `-a+1`.
 
 The `dc` program resolves this ambiguity by using the underscore to
 denote negative numbers: `dc -e '_1 1 + p'` prints 0; but, we don't do that
-underscore thing.
+underscore thing. 
 
 The output consists of space separated rpn expressions, so no mixups
-of this sort are likely to happen downstream.
+of this sort are likely to happen downstream (apart from negated variables, the doesn't work in rpn either).
 
 ### derivative
 
@@ -239,7 +244,7 @@ And finally the expression:
 x*x/(1e-16 + fabs(x))
 ```
 
-works for all *x* (but is not equal to the original x everywhere). 
+works for all *x* (but is not equal to the original x everywhere, or indeed anywhere). 
 So, a procedure now can call the resulting math
 more carelessly and not crash while doing so.
 
@@ -289,7 +294,6 @@ with specific names and content:
 |Parameters.txt|yes|parameter names and values|
 |Variables.txt|yes|state variable names, initial values, and a unit or measurement|
 |Expression.txt|no|math expression, names and formulae|
-|ReactionFlux.txt|no|same as Expressions, but with automatic names|
 |Function.txt|no|terms that define a vector valued output function|
 
 See [sh/README.md](sh/README.md)

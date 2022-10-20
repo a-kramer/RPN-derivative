@@ -49,6 +49,14 @@ else
 	echo "Some temporary files will be created in ${TMP}, this location can be changed by setting the third command line argument."
 	echo "All derivatives will be simplified N times. (simplication means: «x+0=x» or «x*1=x», and similar things)"
 	echo "The default model name is 'DemoModel'."
+	echo "[$0] Using these files:"
+	echo "CON «$CON»"
+	echo "PAR «$PAR»"
+	echo "VAR «$VAR»"
+	echo "EXP «$EXP»"
+	echo "FUN «$FUN»"
+	echo "ODE «$ODE»"
+	exit 1	
 fi
 
 if [ -z `which derivative` ]; then
@@ -77,8 +85,8 @@ sed -r -e 's/(exp|sin|cos|tan)/@\1/g' -e 's/^([+-][a-zA-Z_])/0 \1/g' -e 's|\([ ]
 ## step 2 substitute expression names for their values (formulae)
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
-		ExpressionName=`awk -F '	' --assign j=$j -e 'NR==j {print $1}' "$EXP"`
-		ExpressionFormula=`awk -F '	' --assign j=$j -e 'NR==j {print $2}' "$EXP"`
+		ExpressionName=`awk -F '	' -v j=$j 'NR==j {print $1}' "$EXP"`
+		ExpressionFormula=`awk -F '	' -v j=$j 'NR==j {print $2}' "$EXP"`
 		sed -i.rm -e "s|${ExpressionName}|(${ExpressionFormula})|g" "$EXODE"
 	done
 fi
