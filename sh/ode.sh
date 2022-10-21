@@ -2,10 +2,12 @@
 
 MODEL=${1:-"DemoModel"}
 N=${2:-6}
-TMP=${3:-/dev/shm/ode_gen}
+# check whether /dev/shm exists
+[ -f /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
+TMP=${3:-$TMPD} # override from command line (optionally)
 
 # make sure the temp folder exists
-[ -d "${TMP}" ] || (mkdir "${TMP}" || TMP='.')
+[ -d "$TMP" ] || (mkdir "$TMP" || TMP='.')
 
 OPTTIONS="-type f"
 
@@ -49,14 +51,15 @@ else
 	echo "Some temporary files will be created in ${TMP}, this location can be changed by setting the third command line argument."
 	echo "All derivatives will be simplified N times. (simplication means: «x+0=x» or «x*1=x», and similar things)"
 	echo "The default model name is 'DemoModel'."
-	exit 1	
+	exit 1
 fi
 
-if [ -z `which derivative` ]; then
+if [ -z `which derivative` -a -z `alias derivative` ]; then
 	echo "[warning] the 'derivative' program is not installed."
 	echo "	if you prefer to use a compiled but not installed copy,"
 	echo "	then you can use an alias (named 'derivative'):"
 	echo "		alias derivative='./bin/derivative'"
+	exit 1
 fi
 ) 1>&2
 
@@ -84,6 +87,8 @@ if [ -f "$EXP" ]; then
 	done
 fi
 
+# `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
+# just don't quote it like this: "$sv"
 for j in `seq 1 $NV`; do
 	sv=`sed -n -e "${j}p" "$VAR"`
 	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt"
