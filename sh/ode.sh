@@ -53,6 +53,12 @@ else
 	for f in "$CON" "$PAR" "$VAR" "$EXP" "$ODE" "$FUN" ; do
 		[ "$f" -a -f "$f" ] && cp "$f" "$TMP"
 	done
+	CON=`basename "$CON"`
+	PAR=`basename "$PAR"`
+	VAR=`basename "$VAR"`
+	EXP=`basename "$EXP"`
+	FUN=`basename "$FUN"`
+	ODE=`basename "$ODE"`
 fi
 } 1>&2
 
