@@ -2,7 +2,7 @@
 
 MODEL=${1:-"DemoModel"}
 BM=`basename "${MODEL}"`
-echo $BM
+#echo $BM
 N=${2:-6}
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
@@ -23,6 +23,7 @@ if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
 	ODE=`echo "$INFO"  | egrep -i '.*ode\.t[xs][vt]$'`
 	echo "unzip -u -q -d $TMP $MODEL *.t[xs][tv]"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && unzip -u -q -d "$TMP" "$MODEL" "*.t[xs][tv]"
+	MODEL=`basename -s .zip "${MODEL}"`
 elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	INFO=`tar tf "$MODEL"`
 	echo "$INFO"
@@ -34,6 +35,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
 	echo "tar xzf -C $TMP $MODEL"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
+	MODEL=`basename -s .tar.gz "${MODEL}"`
 else
 	OPTTIONS="-type f"
 	CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
@@ -113,7 +115,7 @@ else
 	exit 1
 fi
 
-if [ -z `which derivative` -a -z `alias derivative` ]; then
+if [ -z `which derivative` -a -z `alias derivative 2>/dev/null` ]; then
 	echo "[warning] the 'derivative' program is not installed."
 	echo "	if you prefer to use a compiled but not installed copy,"
 	echo "	then you can use an alias (named 'derivative'):"
