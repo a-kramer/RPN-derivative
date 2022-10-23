@@ -1,24 +1,47 @@
 #!/bin/sh
 
 MODEL=${1:-"DemoModel"}
+BM=`basename "${MODEL}"`
+echo $BM
 N=${2:-6}
-TMP=${3:-/dev/shm/ode_gen}
+# check whether /dev/shm exists
+[ -d /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
+TMP=${3:-$TMPD} # override from command line (optionally)
 
 # make sure the temp folder exists
-[ -d "${TMP}" ] || (mkdir "${TMP}" || TMP='.')
+[ -d "$TMP" ] || (mkdir "$TMP" || TMP='.')
 
-OPTTIONS="-type f"
-
-CON=`find . $OPTIONS -regex ".*[Cc]onstants?\.t[xs][tv]$" -print -quit`
-VAR=`find . $OPTIONS -regex ".*\([Ss]tate\)?[Vv]ariables?\.t[xs][vt]$" -print -quit`
-PAR=`find . $OPTIONS -regex ".*\([Mm]odel\)?[Pp]arameters?\.t[xs][vt]$" -print -quit`
-FUN=`find . $OPTIONS -regex ".*\([Oo]utput\)?[Ff]unctions?\.t[xs][vt]$" -print -quit`
-EXP=`find . $OPTIONS -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.t[xs][vt]$" -print -quit`
-ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
-
-# print some help if something is not right
-(
-if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
+{
+if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
+	INFO=`zipinfo -1 "$MODEL"`
+	echo "$INFO"
+	CON=`echo "$INFO" | egrep -i 'Constants?\.t[xs][tv]$'`
+	VAR=`echo "$INFO"  | egrep -i '(State)?Variables?\.t[xs][vt]$'`
+	PAR=`echo "$INFO"  | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
+	FUN=`echo "$INFO"  | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
+	EXP=`echo "$INFO"  | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
+	ODE=`echo "$INFO"  | egrep -i '.*ode\.t[xs][vt]$'`
+	echo "unzip -u -q -d $TMP $MODEL *.t[xs][tv]"
+	[ "$VAR" -a "$PAR" -a "$ODE" ] && unzip -u -q -d "$TMP" "$MODEL" "*.t[xs][tv]"
+elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
+	INFO=`tar tf "$MODEL"`
+	echo "$INFO"
+	CON=`echo "$INFO" | egrep -i 'Constants?\.t[xs][tv]$'`
+	VAR=`echo "$INFO" | egrep -i '(State)?Variables?\.t[xs][vt]$'`
+	PAR=`echo "$INFO" | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
+	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
+	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
+	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
+	echo "tar xzf -C $TMP $MODEL"
+	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
+else
+	OPTTIONS="-type f"
+	CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
+	VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
+	PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
+	FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
+	EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
+	ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
@@ -26,50 +49,89 @@ if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
 	echo "EXP «$EXP»"
 	echo "FUN «$FUN»"
 	echo "ODE «$ODE»"
-else
-	echo "Usage: $0 [ModelName] [N] [TMP]"
-	echo;
-	echo "This assumes that `pwd` contains the four mandatory files:"
-	echo "     Variables.txt   the names of all state variables, one per line, "
-	echo "                     with initial value, and a unit of measurement, separated by a tab"
-	echo "    Parameters.txt   parameter names, one per line"
+	echo "copying to $TMP"
+	for f in "$CON" "$PAR" "$VAR" "$EXP" "$ODE" "$FUN" ; do
+		[ "$f" -a -f "$f" ] && cp "$f" "$TMP"
+	done
+	CON=`basename "$CON"`
+	PAR=`basename "$PAR"`
+	VAR=`basename "$VAR"`
+	EXP=`basename "$EXP"`
+	FUN=`basename "$FUN"`
+	ODE=`basename "$ODE"`
+fi
+} 1>&2
 
-	echo "                     expressions, state variables, parameters, and constants"
-	echo "           ODE.txt   mathematical formulae of how the ODE's right hand side is calculated using "
-	echo "                     fluxes, expressions, state variables, parameters, and constants"
+# now all files should exist in the temp directory, so we set new paths:
+[ "$CON" ] && CON="$TMP/$CON"
+[ "$PAR" ] && PAR="$TMP/$PAR"
+[ "$EXP" ] && EXP="$TMP/$EXP"
+[ "$VAR" ] && VAR="$TMP/$VAR"
+[ "$FUN" ] && FUN="$TMP/$FUN"
+[ "$ODE" ] && ODE="$TMP/$ODE"
+
+
+# print some help if something is not right
+{
+if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
+	echo "Operating on these files:"
+	echo "CON «$CON»"
+	echo "PAR «$PAR»"
+	echo "VAR «$VAR»"
+	echo "EXP «$EXP»"
+	echo "FUN «$FUN»"
+	echo "ODE «$ODE»"
+else
+	echo "Usage: $0 [ModelName|ModelName.zip|ModelName.tar.gz] [N] [TMP]"
+	echo;
+	echo "This assumes that `pwd` or the specified archive contains at leat these files:"
+	echo "[State]Variables.txt   the names of all state variables, one per line, "
+	echo "                       with initial value, and a unit of measurement, separated by a tab"
+	echo "      Parameters.txt   parameter names, one per line"
+
+	echo "                       expressions, state variables, parameters, and constants"
+	echo "             ODE.txt   mathematical formulae of how the ODE's right hand side is calculated using "
+	echo "                       fluxes, expressions, state variables, parameters, and constants"
+	echo;
+	echo " ======= mandatory ========="
+	echo "  Parameters «$PAR»"
+	echo "  State Variables «$VAR»"
+	echo "  ODE «$ODE»"
+	echo " ==========================="
 	echo;
 	echo "Some files are optional:"
-	echo "     Constants.txt   names and values of constants, one name value pair per line, "
-	echo "                     separated by a tab"
-	echo "   Expressions.txt   a file with expression names and formulae (right hand side) comprising "
-	echo "                     constants, parameters, and state variables, separated by either '=' or tab"
-	echo "     Functions.txt   a file with named expressions (one per line) that define (observable) model outputs, "
-	echo "                     name and value sepearated by a tab."
+	echo "       Constants.txt   names and values of constants, one name value pair per line, "
+	echo "                       separated by a tab"
+	echo "     Expressions.txt   a file with expression names and formulae (right hand side) comprising "
+	echo "                       constants, parameters, and state variables, separated by either '=' or tab"
+	echo "       Functions.txt   a file with named expressions (one per line) that define (observable) model outputs, "
+	echo "                       name and value sepearated by a tab."
 	echo;
 	echo "Some temporary files will be created in ${TMP}, this location can be changed by setting the third command line argument."
 	echo "All derivatives will be simplified N times. (simplication means: «x+0=x» or «x*1=x», and similar things)"
 	echo "The default model name is 'DemoModel'."
-	exit 1	
+	exit 1
 fi
 
-if [ -z `which derivative` ]; then
+if [ -z `which derivative` -a -z `alias derivative` ]; then
 	echo "[warning] the 'derivative' program is not installed."
 	echo "	if you prefer to use a compiled but not installed copy,"
 	echo "	then you can use an alias (named 'derivative'):"
 	echo "		alias derivative='./bin/derivative'"
+	exit 1
 fi
-) 1>&2
+} 1>&2
 
 NV=`wc -l < "$VAR"`
 NP=`wc -l < "$PAR"`
 [ -f "$EXP" ] && NE=`wc -l < "$EXP"` || NE=0
 [ -f "$FUN" ] && NF=`wc -l < "$FUN"` || NF=0
 
-(
+{
 echo "$NV state variables, $NP parameters, $NE expressions, $NF functions"
 echo "y-jacobian df[i]/dy[j] has size $((NV*NV)) ($NV×$NV)"
 echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
-) 1>&2
+} 1>&2
 
 # make a copy of ODE.txt, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
@@ -88,6 +150,8 @@ if [ -f "$EXP" ]; then
 	done
 fi
 
+# `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
+# just don't quote it like this: "$sv"
 for j in `seq 1 $NV`; do
 	sv=`sed -n -e "${j}p" "$VAR"`
 	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt"
