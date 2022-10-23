@@ -74,7 +74,11 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 # make a copy of ODE.txt, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
 ## step 1, remove unary plusses and minuses
-sed -r -e 's/(exp|sin|cos|tan)/@\1/g' -e 's/^([+-][a-zA-Z_])/0 \1/g' -e 's|\([ ]*([+-][ ]*[a-zA-Z_][a-zA-Z_0-9]*[ ]*)\)|(0\1)|g' "$ODE" > "$EXODE"
+sed -r -e 's/(exp|sin|cos|tan)/@\1/g' \
+       -e 's/^([ ]*[-][ ]*([a-zA-Z_(]))/-1*\2/g' \
+       -e 's/^([ ]*[+][ ]*([a-zA-Z_(]))/\2/g' \
+       -e 's|\([ ]*([-][ ]*([a-zA-Z_(]))|(-1*\2|g' \
+       -e 's|\([ ]*([+][ ]*([a-zA-Z_(]))|(\2|g' "$ODE" > "$EXODE"
 ## step 2 substitute expression names for their values (formulae)
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
