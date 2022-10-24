@@ -4,9 +4,12 @@ The [GNU Scientific
 Library](https://www.gnu.org/software/gsl/doc/html/ode-initval.html)
 defines function interfaces for an ordinary differential equation (ODE) system.
 
-$$ \dot y = f(t,y;p) $$
-
-$$ y(t_0) = y_0 $$
+$$ 
+\begin{align} 
+\dot y &= f(t,y;p) \\
+ y(t_0) &= y_0 
+\end{align}
+$$
 
 The script [ode.sh](./ode.sh) generates these right-hand-side functions $f$ in C or R (perhaps more languages later). Additionally the script writes an analytical *Jacobian* $df/dy$, *parameter Jacobian* $df/dp$, and an output function that models *observable quanities*.
 
