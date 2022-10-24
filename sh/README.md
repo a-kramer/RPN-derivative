@@ -4,9 +4,16 @@ The [GNU Scientific
 Library](https://www.gnu.org/software/gsl/doc/html/ode-initval.html)
 defines function interfaces for an ordinary differential equation (ODE) system.
 
-The script [ode.sh](./ode.sh) generates these functions.
+```math
+\dot y &= f(t,y;p)
+y(t_0) &= y_0
+```
+The script [ode.sh](./ode.sh) generates these right-hand-side functions $f$ in C or R (perhaps more languages later). Additionally the script writes an analytical *Jacobian* $df/dy$, *parameter Jacobian* $df/dp$, and an output function that models *observable quanities*.
 
-In addition, the functions return the length of the return buffer they
+**Note on platforms** we try to make this script run with GNU tools as well as BSD tools (i.e.: options to *find*, *awk*, and *sed*).
+
+**Note on C functions:** In addition to the requirements of the 
+GNU scientific library, the functions return the length of the return buffer they
 expect when called with NULL pointers instead of allocated output
 buffers. For the demo model in [../examples/](../examples), this is:
 
@@ -30,27 +37,47 @@ int status=DemoModel_vf(t,y,f,par); /* returns GSL_SUCCESS (0) */
 This is to allow dynamic loading (dlopen/dlsym) and probing for system size.
 
 Note that the functions created by the script are not minimal, they
-declare lots of unused variables. The script declares all variables
-that could be used by the function (generally).  The removal is left to
-the compiler.
+declare lots of unused variables. The script declares _all_ variables
+that could be used by the function (generally) rather than the ones 
+that are actually used.  The removal is left to the compiler.
 
 ## Input Files
 
 This script assumes the presence of text files that describe a dynamic
 system, these files can be obtained by `awk` from [SBtab](sbtab.net)
 files, and are created automatically by `sbtab_to_vfgen()` in the
-[SBtabVFGEN](a-kramer/SBtabVFGEN) package.
+[SBtabVFGEN](a-kramer/SBtabVFGEN) package. These files may be archived 
+together in `ModelName.tar.gz` or `ModelName.zip`. In that case a typical call would be:
 
-We are using models in the area of biochemical reaction systems, so
-some of the optional files are useful for that specific field (ReactionFluxes).
+```sh
+$ ./ode.sh ModelName.zip > ModelName_gvf.c
+```
+or
+```sh
+$ ./ode.sh -R ModelName.zip > ModelName.R
+```
+to create [R](https://www.r-project.org) code.
 
-The naming of the files is somewhat flexible. The names may be
+The naming of the Model files is somewhat flexible. The names may be
 capitalized (`parameters` or `Parameters`). Plural forms are optional
 (`ReactionFormula.txt` or `ReactionFormulae.txt`). Longer and shorter
 names are possible (`Expression.txt` or `ExpressionFormula.txt`).
 
 In addition, the text files may have names ending in tsv and use tabs
-as separators.
+as separators. For files containing math formulae tabs are mandatory 
+as math can contain spaces. The file can still end in txt, regardless 
+of field separator used. 
+
+```sh
+$ tar tf DemoModel.tar.gz
+Constant.txt
+ExpressionFormula.txt
+Function.txt
+ODE.txt
+Parameters.txt
+Variables.txt
+```
+The above is OK in terms of naming.
 
 ### Constants (optional)
 
@@ -75,7 +102,6 @@ A column of parameter names and default values, separated by tabs or spaces, one
 The values will be used to write the function
 `${ModelName}_default(double t, void *par)`, it will fill the vector
 par with the default values.
-
 
 [Example](../examples):
 
