@@ -17,6 +17,15 @@ while [ $# -gt 0 ]; do
 done
 
 BM=`basename "${MODEL}"`
+
+#Default Names
+CON="Constants.txt"
+PAR="Parameters.txt"
+EXP="Expressions.txt"
+VAR="StateVariables.txt"
+FUN="OutputFunctions.txt"
+ODE="ODE.txt"
+
 #echo $BM
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
@@ -25,6 +34,7 @@ TMP=${3:-$TMPD} # override from command line (optionally)
 # make sure the temp folder exists
 [ -d "$TMP" ] || mkdir "$TMP" || TMP='.'
 
+# a block that creates some output that is not code
 {
 if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
 	INFO=`zipinfo -1 "$MODEL"`
@@ -50,14 +60,25 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	echo "tar xzf -C $TMP $MODEL"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
 	MODEL=`basename -s .tar.gz "${MODEL}"`
+elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
+	echo "Using this vector field file: $MODEL"
+	sed -r -n -e 's|^[ ]*<Constant.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$CON"
+	sed -r -n -e 's|^[ ]*<Parameter.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$PAR"
+	sed -r -n -e 's|^[ ]*<Expression.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$EXP"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*DefaultInitialCondition="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$VAR"
+	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
+	# we take the model's name from the file's content
+	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
+	echo "Name of the Model according to vfgen file: $MODEL"
 else
 	OPTTIONS="-type f"
-	CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
-	VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
-	PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
-	FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
-	EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
-	ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
+	[ -z "$CON" ] && CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
+	[ -z "$VAR" ] && VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
+	[ -z "$PAR" ] && PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
+	[ -z "$FUN" ] && FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
+	[ -z "$EXP" ] && EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
+	[ -z "$ODE" ] && ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
