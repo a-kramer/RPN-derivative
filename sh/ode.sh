@@ -219,7 +219,7 @@ cat<<EOF
 int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 {
 	double *p_=par;
-	if (!y_ || !f_) return ${NV};
+	if (!y_ || !f_) return $((NV));
 EOF
 awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -234,7 +234,7 @@ cat<<EOF
 int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !jac_) return ${NV}*${NV};
+	if (!y_ || !jac_) return $((NV))*$((NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -242,7 +242,7 @@ awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jac_Column_${j}.txt
+	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jac_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -252,7 +252,7 @@ cat<<EOF
 int ${MODEL}_jacp(double t, const double y_[], double *jacp_, double *dfdt_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !jacp_) return ${NV}*${NP};
+	if (!y_ || !jacp_) return $((NV))*$((NP));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -260,7 +260,7 @@ awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NP`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
+	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jacp_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -271,7 +271,7 @@ cat<<EOF
 int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return `wc -l < "$FUN"`;
+	if (!y_ || !func_) return $((NF));
 EOF
 
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
@@ -288,7 +288,7 @@ cat<<EOF
 int ${MODEL}_default(double t, void *par)
 {
 	double *p_=par;
-	if (!p_) return `wc -l < "$PAR"`;
+	if (!p_) return $((NP));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk '{print "\tp_[" NR-1 "] = " $2 ";"}' "$PAR"
@@ -321,7 +321,7 @@ EOF
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
-printf "\tf_<-vector(len=%i)" $NV
+printf "\tf_<-vector(len=%i)\n" $((NV))
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
 echo "\treturn(f_);"
 echo "}"
@@ -352,7 +352,7 @@ EOF
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
-printf "\tjacp_<-matrix(%i,%i)" $NV $NP
+printf "\tjacp_<-matrix(%i,%i)\n" $NV $NP
 for j in `seq 1 $NP`; do
 	echo "# column $j (df/dp_$((j)))"
 	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
@@ -402,7 +402,7 @@ write_in_$PL
 
 ## cleaning procedure
 {
-if [ "$CLEAN" = "yes" -a -d $TMP ]; then
+if [ "$CLEAN" = "yes" -a -d "$TMP" ]; then
 	rm $TMP/*
 else
 	echo "The temporary files are in ${TMP}:"
