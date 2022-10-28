@@ -3,6 +3,7 @@
 MODEL="DemoModel"
 N=10
 PL="C"
+CLEAN="yes"
 
 while [ $# -gt 0 ]; do
  case $1 in
@@ -11,7 +12,7 @@ while [ $# -gt 0 ]; do
  [0-9]*) N=$2; shift 2;;
  -n) N=$2; shift 2;;
  -t) TMP="$2"; shift 2;;
- -c) CLEAN="yes"; shift;;
+ --no-clean|--do-not-clean) CLEAN="no"; shift;;
  *) MODEL="$1"; shift;;
  esac
 done
@@ -316,25 +317,25 @@ require("deSolve")
 ${MODEL}_vf <- function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2}' "$EXP"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
 printf "\tf_<-vector(len=%i)" $NV
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
 echo "\treturn(f_);"
 echo "}"
 
 cat<<EOF
-# ode Jacobian df(t,y;p)/dy 
+# ode Jacobian df(t,y;p)/dy
 ${MODEL}_jac<-function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2}' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR-1 "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR-1 "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
-printf "\tjac_<-matrix(%i,%i)" $NV $NV
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR-1 "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR-1 "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
+printf "\tjac_ <- matrix(%i,%i)\n" $NV $NV
 for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
 	awk -v n=$NV -v j=$j '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
@@ -347,9 +348,9 @@ cat<<EOF
 ${MODEL}_jacp<-function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2}' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
 printf "\tjacp_<-matrix(%i,%i)" $NV $NP
 for j in `seq 1 $NP`; do
@@ -366,10 +367,10 @@ ${MODEL}_func<-function(t, state, parameters)
 {
 EOF
 
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
 [ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $0 }' "$FUN"
 echo "\treturn(func_);"
 echo "}"
@@ -380,7 +381,7 @@ cat<<EOF
 ${MODEL}_default<-function(t)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
 awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
 printf "\treturn(parameters);\n}\n"
 
@@ -390,7 +391,7 @@ ${MODEL}_init<-function(t, parameters)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 printf "\t# the initial value may depend on the parameters. \n"
 printf "\tstate<-vector(%i)" $NV
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
@@ -400,7 +401,11 @@ printf "\treturn(state)\n}\n"
 write_in_$PL
 
 ## cleaning procedure
-if [ "$CLEAN" -a -d $TMP ]; then
-	rm $TMP/d*_d*.txt
-	rm $TMP/Jac*_Column_*.txt
+{
+if [ "$CLEAN" = "yes" -a -d $TMP ]; then
+	rm $TMP/*
+else
+	echo "The temporary files are in ${TMP}:"
+	ls "$TMP"
 fi
+} 1>&2
