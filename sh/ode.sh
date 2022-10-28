@@ -182,8 +182,8 @@ sed -r -e 's/(exp|sin|cos|tan)/@\1/g' \
 ## step 2 substitute expression names for their values (formulae)
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
-		ExpressionName=`awk -F '	' -v j=$j 'NR==j {print $1}' "$EXP"`
-		ExpressionFormula=`awk -F '	' -v j=$j 'NR==j {print $2}' "$EXP"`
+		ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$EXP"`
+		ExpressionFormula=`awk -F '	' -v j=$((j)) 'NR==j {print $2}' "$EXP"`
 		sed -i.rm -e "s|${ExpressionName}|(${ExpressionFormula})|g" "$EXODE"
 	done
 fi
@@ -242,7 +242,7 @@ awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
-	awk -v n=$NV -v j=$j '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jac_Column_${j}.txt
+	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jac_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -260,7 +260,7 @@ awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NP`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$NP -v j=$j '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
+	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -338,7 +338,7 @@ awk '{print "\t" $1 " <- state[" NR-1 "]"}' "$VAR"
 printf "\tjac_ <- matrix(%i,%i)\n" $NV $NV
 for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
-	awk -v n=$NV -v j=$j '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
+	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
 done
 echo "\treturn(jac_);"
 echo "}"
@@ -355,7 +355,7 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 printf "\tjacp_<-matrix(%i,%i)" $NV $NP
 for j in `seq 1 $NP`; do
 	echo "# column $j (df/dp_$((j)))"
-	awk -v n=$NP -v j=$j '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
+	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
 done
 echo "\treturn(jacp_)"
 echo "}"
