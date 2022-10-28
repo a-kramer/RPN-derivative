@@ -3,6 +3,7 @@
 MODEL="DemoModel"
 N=10
 PL="C"
+CLEAN="yes"
 
 while [ $# -gt 0 ]; do
  case $1 in
@@ -11,12 +12,21 @@ while [ $# -gt 0 ]; do
  [0-9]*) N=$2; shift 2;;
  -n) N=$2; shift 2;;
  -t) TMP="$2"; shift 2;;
- -c) CLEAN="yes"; shift;;
+ --no-clean|--do-not-clean) CLEAN="no"; shift;;
  *) MODEL="$1"; shift;;
  esac
 done
 
 BM=`basename "${MODEL}"`
+
+#Default Names
+CON="Constants.txt"
+PAR="Parameters.txt"
+EXP="Expressions.txt"
+VAR="StateVariables.txt"
+FUN="OutputFunctions.txt"
+ODE="ODE.txt"
+
 #echo $BM
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
@@ -25,6 +35,7 @@ TMP=${3:-$TMPD} # override from command line (optionally)
 # make sure the temp folder exists
 [ -d "$TMP" ] || mkdir "$TMP" || TMP='.'
 
+# a block that creates some output that is not code
 {
 if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
 	INFO=`zipinfo -1 "$MODEL"`
@@ -50,14 +61,25 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	echo "tar xzf -C $TMP $MODEL"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
 	MODEL=`basename -s .tar.gz "${MODEL}"`
+elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
+	echo "Using this vector field file: $MODEL"
+	sed -r -n -e 's|^[ ]*<Constant.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$CON"
+	sed -r -n -e 's|^[ ]*<Parameter.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$PAR"
+	sed -r -n -e 's|^[ ]*<Expression.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$EXP"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*DefaultInitialCondition="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$VAR"
+	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
+	# we take the model's name from the file's content
+	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
+	echo "Name of the Model according to vfgen file: $MODEL"
 else
 	OPTTIONS="-type f"
-	CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
-	VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
-	PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
-	FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
-	EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
-	ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
+	[ -z "$CON" ] && CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
+	[ -z "$VAR" ] && VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
+	[ -z "$PAR" ] && PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
+	[ -z "$FUN" ] && FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
+	[ -z "$EXP" ] && EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
+	[ -z "$ODE" ] && ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
@@ -295,25 +317,25 @@ require("deSolve")
 ${MODEL}_vf <- function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2}' "$EXP"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
 printf "\tf_<-vector(len=%i)" $NV
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
 echo "\treturn(f_);"
 echo "}"
 
 cat<<EOF
-# ode Jacobian df(t,y;p)/dy 
+# ode Jacobian df(t,y;p)/dy
 ${MODEL}_jac<-function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2}' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR-1 "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR-1 "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
-printf "\tjac_<-matrix(%i,%i)" $NV $NV
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR-1 "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR-1 "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
+printf "\tjac_ <- matrix(%i,%i)\n" $NV $NV
 for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
 	awk -v n=$NV -v j=$j '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
@@ -326,9 +348,9 @@ cat<<EOF
 ${MODEL}_jacp<-function(t, state, parameters)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2}' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
 printf "\tjacp_<-matrix(%i,%i)" $NV $NP
 for j in `seq 1 $NP`; do
@@ -345,10 +367,10 @@ ${MODEL}_func<-function(t, state, parameters)
 {
 EOF
 
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 "<-state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
 [ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $0 }' "$FUN"
 echo "\treturn(func_);"
 echo "}"
@@ -359,7 +381,7 @@ cat<<EOF
 ${MODEL}_default<-function(t)
 {
 EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
 awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
 printf "\treturn(parameters);\n}\n"
 
@@ -369,7 +391,7 @@ ${MODEL}_init<-function(t, parameters)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 "<-parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 printf "\t# the initial value may depend on the parameters. \n"
 printf "\tstate<-vector(%i)" $NV
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
@@ -379,7 +401,11 @@ printf "\treturn(state)\n}\n"
 write_in_$PL
 
 ## cleaning procedure
-if [ "$CLEAN" -a -d $TMP ]; then
-	rm $TMP/d*_d*.txt
-	rm $TMP/Jac*_Column_*.txt
+{
+if [ "$CLEAN" = "yes" -a -d $TMP ]; then
+	rm $TMP/*
+else
+	echo "The temporary files are in ${TMP}:"
+	ls "$TMP"
 fi
+} 1>&2
