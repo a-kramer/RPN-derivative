@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# this script uses dc to evaluate anrpn but first we translate the
+# this script uses dc to evaluate an rpn but first we translate the
 # math expression into something that dc will understand.
 #
 # the main issues are:

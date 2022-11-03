@@ -5,7 +5,7 @@
 # the main issues are:
 # (1) variables must be replaced by values
 # (2) scale needs to be set, as necessary
-# (3) convter pow function to ^ operator
+# (3) convert pow function to power operator ^
 
 while read Math; do
  # address (3)
@@ -18,4 +18,5 @@ while read Math; do
  -e 's/sin/s/g' \
  -e 's/cos/c/g' \
  -e 's/^/scale=10; /g' | bc -l
+ # this^ means beginning of input line, not power, in regular expressions.
 done
