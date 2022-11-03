@@ -215,7 +215,7 @@ cat<<EOF
  * GSL_SUCCESS (0) is returned when no error occurred.
  */
 
-/* ode vector field: y'=f(t,y;p), the Activation expression is currently unused */
+/* ode vector field: y'=f(t,y;p) */
 int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 {
 	double *p_=par;
@@ -393,7 +393,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 printf "\t# the initial value may depend on the parameters. \n"
-printf "\tstate<-vector(%i)" $NV
+printf "\tstate<-vector(%i)\n" $NV
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
 printf "\treturn(state)\n}\n"
 }
