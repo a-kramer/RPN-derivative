@@ -21,12 +21,15 @@ fi
 
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"
+# make sure the temp folder exists
+[ -d "$TMP" ] || mkdir "$TMP"
 
+# read command line options
 while [ $# -gt 0 ]; do
  case $1 in
  -C) PL="C"; shift;;
  -R) PL="R"; shift;;
- [0-9]*) N=$2; shift 2;;
+ [0-9]|[0-9][0-9]) N=$2; shift 2;;
  -n) N=$2; shift 2;;
  -t) TMP="$2"; shift 2;;
  --no-clean|--do-not-clean|--inspect) CLEAN="no"; shift;;
@@ -44,8 +47,6 @@ VAR="StateVariables.txt"
 FUN="OutputFunctions.txt"
 ODE="ODE.txt"
 
-# make sure the temp folder exists
-[ -d "$TMP" ] || mkdir "$TMP" || TMP='.'
 
 # a block that creates some output that is not code
 {
@@ -120,57 +121,7 @@ fi
 [ "$FUN" ] && FUN="$TMP/$FUN"
 [ "$ODE" ] && ODE="$TMP/$ODE"
 
-
-# print some help if something is not right
-{
-if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
-	echo "Operating on these files:"
-	echo "CON «$CON»"
-	echo "PAR «$PAR»"
-	echo "VAR «$VAR»"
-	echo "EXP «$EXP»"
-	echo "FUN «$FUN»"
-	echo "ODE «$ODE»"
-else
-	echo "Usage: $0 [ModelName|ModelName.zip|ModelName.tar.gz] [N] [TMP]"
-	echo;
-	echo "This assumes that `pwd` or the specified archive contains at leat these files:"
-	echo "[State]Variables.txt   the names of all state variables, one per line, "
-	echo "                       with initial value, and a unit of measurement, separated by a tab"
-	echo "      Parameters.txt   parameter names, one per line"
-
-	echo "                       expressions, state variables, parameters, and constants"
-	echo "             ODE.txt   mathematical formulae of how the ODE's right hand side is calculated using "
-	echo "                       fluxes, expressions, state variables, parameters, and constants"
-	echo;
-	echo " ======= mandatory ========="
-	echo "  Parameters «$PAR»"
-	echo "  State Variables «$VAR»"
-	echo "  ODE «$ODE»"
-	echo " ==========================="
-	echo;
-	echo "Some files are optional:"
-	echo "       Constants.txt   names and values of constants, one name value pair per line, "
-	echo "                       separated by a tab"
-	echo "     Expressions.txt   a file with expression names and formulae (right hand side) comprising "
-	echo "                       constants, parameters, and state variables, separated by either '=' or tab"
-	echo "       Functions.txt   a file with named expressions (one per line) that define (observable) model outputs, "
-	echo "                       name and value sepearated by a tab."
-	echo;
-	echo "Some temporary files will be created in ${TMP}, this location can be changed by setting the third command line argument."
-	echo "All derivatives will be simplified N times. (simplication means: «x+0=x» or «x*1=x», and similar things)"
-	echo "The default model name is 'DemoModel'."
-	exit 1
-fi
-
-if [ -z `which derivative` -a -z `alias derivative 2>/dev/null` ]; then
-	echo "[warning] the 'derivative' program is not installed."
-	echo "	if you prefer to use a compiled but not installed copy,"
-	echo "	then you can use an alias (named 'derivative'):"
-	echo "		alias derivative='./bin/derivative'"
-	exit 1
-fi
-} 1>&2
+. $dir/help.sh
 
 NV=`wc -l < "$VAR"`
 NP=`wc -l < "$PAR"`
@@ -200,215 +151,20 @@ fi
 # just don't quote it like this: "$sv"
 for j in `seq 1 $NV`; do
 	sv=`sed -n -e "${j}p" "$VAR"`
-	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt"
+	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
 done
 
 for j in `seq 1 $NP`; do
 	par=`sed -n -e "${j}p" "$PAR"`
-	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt"
+	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
 done
 
-write_in_C () {
-# write a gsl ode model file:
-cat<<EOF
-#include <stdlib.h>
-#include <math.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_odeiv2.h>
 
-/* The error code indicates how to pre-allocate memory
- * for output values such as \`f_\`. The _vf function returns
- * the number of state variables, if any of the args are \`NULL\`.
- * evaluation errors can be indicated by negative return values.
- * GSL_SUCCESS (0) is returned when no error occurred.
- */
-
-/* ode vector field: y'=f(t,y;p) */
-int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
-{
-	double *p_=par;
-	if (!y_ || !f_) return $((NV));
-EOF
-awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-cat<<EOF
-/* ode Jacobian df(t,y;p)/dy */
-int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !jac_) return $((NV))*$((NV));
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-for j in `seq 1 $NV`; do
-	echo "/* column $j (df/dy_$((j-1))) */"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jac_Column_${j}.txt
-done
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-cat<<EOF
-/* ode parameter Jacobian df(t,y;p)/dp */
-int ${MODEL}_jacp(double t, const double y_[], double *jacp_, double *dfdt_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !jacp_) return $((NV))*$((NP));
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-for j in `seq 1 $NP`; do
-	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jacp_Column_${j}.txt
-done
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-
-cat<<EOF
-/* ode Functions F(t,y;p) */
-int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !func_) return $((NF));
-EOF
-
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-[ -f "$FUN" ] && awk '{print "\tfunc_[" (NR-1) "] = " $0 ";"}' "$FUN"
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-
-cat<<EOF
-/* ode default parameters */
-int ${MODEL}_default(double t, void *par)
-{
-	double *p_=par;
-	if (!p_) return $((NP));
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tp_[" NR-1 "] = " $2 ";"}' "$PAR"
-printf "\treturn GSL_SUCCESS;\n}\n"
-
-cat<<EOF
-/* ode initial values */
-int ${MODEL}_init(double t, double *y_, void *par)
-{
-	double *p_=par;
-	if (!y_) return ${NV};
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-printf "\t/* the initial value of y may depend on the parameters. */\n"
-awk '{print "\ty_[" NR-1 "] = " $2 ";"}' "$VAR"
-printf "\treturn GSL_SUCCESS;\n}\n"
-}
-
-write_in_R () {
-# write a gsl ode model file:
-cat<<EOF
-require("deSolve")
-
-# ode vector field: y'=f(t,y;p)
-${MODEL}_vf <- function(t, state, parameters)
-{
-EOF
-[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
-printf "\tf_<-vector(len=%i)\n" $((NV))
-awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
-echo "\treturn(f_);"
-echo "}"
-
-cat<<EOF
-# ode Jacobian df(t,y;p)/dy
-${MODEL}_jac<-function(t, state, parameters)
-{
-EOF
-[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR-1 "]"}' "$PAR"
-awk '{print "\t" $1 " <- state[" NR-1 "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
-printf "\tjac_ <- matrix(%i,%i)\n" $NV $NV
-for j in `seq 1 $NV`; do
-	echo "# column $j (df/dy_$((j-1)))"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
-done
-echo "\treturn(jac_);"
-echo "}"
-
-cat<<EOF
-# ode parameter Jacobian df(t,y;p)/dp
-${MODEL}_jacp<-function(t, state, parameters)
-{
-EOF
-[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
-printf "\tjacp_<-matrix(%i,%i)\n" $NV $NP
-for j in `seq 1 $NP`; do
-	echo "# column $j (df/dp_$((j)))"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
-done
-echo "\treturn(jacp_)"
-echo "}"
-
-
-cat<<EOF
-# ode Functions F(t,y;p)
-${MODEL}_func<-function(t, state, parameters)
-{
-EOF
-
-[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
-awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
-[ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $0 }' "$FUN"
-echo "\treturn(func_);"
-echo "}"
-
-
-cat<<EOF
-# ode default parameters; can depend on constants, and time  of initialization
-${MODEL}_default<-function(t)
-{
-EOF
-[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
-awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
-printf "\treturn(parameters);\n}\n"
-
-cat<<EOF
-# ode initial values
-${MODEL}_init<-function(t, parameters)
-{
-EOF
-[ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
-printf "\t# the initial value may depend on the parameters. \n"
-printf "\tstate<-vector(%i)\n" $NV
-awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
-printf "\treturn(state)\n}\n"
-}
-
+## In the next two lines, we read the code for writing output in the specified programming language, and then run the appropriate function
+. "$dir/write_${PL}.sh"
 write_in_$PL
 
-## cleaning procedure
+## (optional) cleaning procedure
 {
 if [ "$CLEAN" = "yes" -a -d "$TMP" ]; then
 	rm $TMP/*
