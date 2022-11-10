@@ -18,6 +18,10 @@ fi
 } 2>/dev/null
 # ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
 
+# find out how the current system's sed matches word boundaries:
+GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
+BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
+# the above strings will be zero if an error occurred
 
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"
@@ -143,19 +147,20 @@ if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
 		ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$EXP"`
 		ExpressionFormula=`awk -F '	' -v j=$((j)) 'NR==j {print $2}' "$EXP"`
-		sed -i.rm -e "s|${ExpressionName}|(${ExpressionFormula})|g" "$EXODE"
+		[ "$GNU_WORD_BOUNDARIES" ] && sed -i.rm -e "s|\<${ExpressionName}\>|(${ExpressionFormula})|g" "$EXODE"
+		[ "$BSD_WORD_BOUNDARIES" ] && sed -i.rm -e "s|[[:<:]]${ExpressionName}[[:>:]]|(${ExpressionFormula})|g" "$EXODE"
 	done
 fi
 
 # `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
 # just don't quote it like this: "$sv"
 for j in `seq 1 $NV`; do
-	sv=`sed -n -e "${j}p" "$VAR"`
+	sv=`awk -v j=$((j)) 'NR==j {print $1}' "$VAR"`
 	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
 done
 
 for j in `seq 1 $NP`; do
-	par=`sed -n -e "${j}p" "$PAR"`
+	par=`awk -v j=$((j)) 'NR==j {print $1}' "$PAR"`
 	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
 done
 
