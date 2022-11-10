@@ -5,6 +5,23 @@ N=10
 PL="C"
 CLEAN="yes"
 
+# find the location of this file, so that we can source neighboring files
+{
+if [ -f "$0" ]; then
+	src="$0"
+elif [ "`alias $0`" ]; then
+	src=`alias "$0" | awk -F= '{print $2}' | tr -d "'"`
+else
+	src=`readlink -f "$0"`
+fi
+[ "$src" ] && dir=`dirname $src` || dir="."
+} 2>/dev/null
+# ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
+
+
+# check whether /dev/shm exists
+[ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"
+
 while [ $# -gt 0 ]; do
  case $1 in
  -C) PL="C"; shift;;
@@ -12,7 +29,7 @@ while [ $# -gt 0 ]; do
  [0-9]*) N=$2; shift 2;;
  -n) N=$2; shift 2;;
  -t) TMP="$2"; shift 2;;
- --no-clean|--do-not-clean) CLEAN="no"; shift;;
+ --no-clean|--do-not-clean|--inspect) CLEAN="no"; shift;;
  *) MODEL="$1"; shift;;
  esac
 done
@@ -26,11 +43,6 @@ EXP="Expressions.txt"
 VAR="StateVariables.txt"
 FUN="OutputFunctions.txt"
 ODE="ODE.txt"
-
-#echo $BM
-# check whether /dev/shm exists
-[ -d /dev/shm ] && TMPD="/dev/shm/ode_gen" || TMPD="/tmp/ode_gen"
-TMP=${3:-$TMPD} # override from command line (optionally)
 
 # make sure the temp folder exists
 [ -d "$TMP" ] || mkdir "$TMP" || TMP='.'
@@ -173,12 +185,8 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 
 # make a copy of ODE.txt, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
-## step 1, remove unary plusses and minuses
-sed -r -e 's/(exp|sin|cos|tan)/@\1/g' \
-       -e 's/^([ ]*[-][ ]*([a-zA-Z_(]))/-1*\2/g' \
-       -e 's/^([ ]*[+][ ]*([a-zA-Z_(]))/\2/g' \
-       -e 's|\([ ]*([-][ ]*([a-zA-Z_(]))|(-1*\2|g' \
-       -e 's|\([ ]*([+][ ]*([a-zA-Z_(]))|(\2|g' "$ODE" > "$EXODE"
+## step 1, remove unary plusses and minuses, add @ to functions, see math.sed for patterns
+sed -r -f "$dir/math.sed" "$ODE" > "$EXODE"
 ## step 2 substitute expression names for their values (formulae)
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
