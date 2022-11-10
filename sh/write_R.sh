@@ -12,7 +12,7 @@ EOF
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
-printf "\tf_<-vector(len=%i)\n" $((NV))
+printf "\tf_<-vector(mode='numeric',len=%i)\n" $((NV))
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
 echo "\treturn(list(f_));"
 echo "}"
@@ -23,10 +23,10 @@ ${MODEL}_jac<-function(t, state, parameters)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
-awk '{print "\t" $1 " <- parameters[" NR-1 "]"}' "$PAR"
-awk '{print "\t" $1 " <- state[" NR-1 "]"}' "$VAR"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
-printf "\tjac_ <- matrix(%i,%i)\n" $((NV)) $((NV))
+printf "\tjac_ <- matrix(NA,%i,%i)\n" $((NV)) $((NV))
 for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
 	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
@@ -43,7 +43,7 @@ EOF
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
-printf "\tjacp_<-matrix(%i,%i)\n" $((NV)) $((NP))
+printf "\tjacp_<-matrix(NA,%i,%i)\n" $((NV)) $((NP))
 for j in `seq 1 $NP`; do
 	echo "# column $j (df/dp_$((j)))"
 	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
@@ -62,7 +62,7 @@ EOF
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
-printf "\tfunc_ <- vector(%i)\n" $((NF))
+printf "\tfunc_ <- vector(mode='numeric',len=%i)\n" $((NF))
 [ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $1 "#" $2 }' "$FUN"
 echo "\treturn(func_);"
 echo "}"
@@ -74,7 +74,7 @@ ${MODEL}_default<-function(t)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
-printf "\tparameters <- vector(%i)\n" $((NP))
+printf "\tparameters <- vector(mode='numeric',len=%i)\n" $((NP))
 awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
 printf "\treturn(parameters);\n}\n"
 
@@ -86,7 +86,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
 awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 printf "\t# the initial value may depend on the parameters. \n"
-printf "\tstate<-vector(%i)\n" $((NV))
+printf "\tstate<-vector(mode='numeric',len=%i)\n" $((NV))
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
 printf "\treturn(state)\n}\n"
 }
