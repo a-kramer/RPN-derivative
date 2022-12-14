@@ -72,6 +72,6 @@ else
 	echo "The code struggles a bit with unary minuses"
 	echo "(0-x will not become -x)."
 	echo "The default model name is 'DemoModel'."
-	#exit 1
+	exit 1
 fi
 } 1>&2
