@@ -63,7 +63,7 @@ awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
 printf "\tfunc_ <- vector(mode='numeric',len=%i)\n" $((NF))
-[ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $2 "#" $1 }' "$FUN"
+[ -f "$FUN" ] && awk '{print "\tfunc_[" NR "] <- " $2 " # " $1 }' "$FUN"
 echo "\treturn(func_);"
 echo "}"
 
