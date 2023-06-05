@@ -76,7 +76,7 @@ EOF
 awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-[ -f "$FUN" ] && awk '{print "\tfunc_[" (NR-1) "] = " $2 "; /* " $1 " */"}' "$FUN"
+[ -f "$FUN" ] && awk -F '	' '{print "\tfunc_[" (NR-1) "] = " $2 "; /* " $1 " */"}' "$FUN"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
