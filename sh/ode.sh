@@ -21,7 +21,7 @@ fi
 # find out how the current system's sed matches word boundaries:
 GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
 BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
-# the above strings will be zero if an error occurred
+# the above strings will be empty if an error occurred
 
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"

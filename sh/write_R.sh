@@ -14,7 +14,11 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
 printf "\tf_<-vector(mode='numeric',len=%i)\n" $((NV))
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
-echo "\treturn(list(f_));"
+echo -n "\tnames(f_) <- c("
+awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
+echo "## for some weird reason deSolve wants this to be a list:"
+echo "\treturn(list(f_))"
 echo "}"
 
 cat<<EOF
@@ -31,7 +35,14 @@ for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
 	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
 done
-echo "\treturn(jac_);"
+echo -n "\trownames(jac_) <- c("
+awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
+echo -n "\tcolnames(jac_) <- c("
+awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
+
+echo "\treturn(jac_)"
 echo "}"
 
 cat<<EOF
@@ -48,6 +59,13 @@ for j in `seq 1 $NP`; do
 	echo "# column $j (df/dp_$((j)))"
 	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
 done
+echo -n "\trownames(jacp_) <- c("
+awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
+echo -n "\tcolnames(jacp_) <- c("
+awk -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
+echo ")"
+
 echo "\treturn(jacp_)"
 echo "}"
 
@@ -64,7 +82,11 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2 }' "$EXP"
 printf "\tfunc_ <- vector(mode='numeric',len=%i)\n" $((NF))
 [ -f "$FUN" ] && awk -F '	' '{print "\tfunc_[" NR "] <- " $2 " # " $1 }' "$FUN"
-echo "\treturn(func_);"
+echo -n "\tnames(func_) <- c("
+awk -v n=$((NF)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$FUN"
+echo ")"
+
+echo "\treturn(func_)"
 echo "}"
 
 
@@ -76,6 +98,9 @@ EOF
 [ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
 printf "\tparameters <- vector(mode='numeric',len=%i)\n" $((NP))
 awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
+echo -n "\tnames(parameters) <- c("
+awk -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
+echo ")"
 printf "\treturn(parameters);\n}\n"
 
 cat<<EOF
@@ -88,5 +113,14 @@ awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 printf "\t# the initial value may depend on the parameters. \n"
 printf "\tstate<-vector(mode='numeric',len=%i)\n" $((NV))
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
+echo -n "\tnames(state) <- c("
+awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
 printf "\treturn(state)\n}\n"
+
+## finally, we collect all functions into one generic name,
+## in case the model is processed by a script, to avoid "eval(as.name(...))"
+cat<<EOF
+model<-list(vf=${MODEL}_vf, jac=${MODEL}_jac, jacp=${MODEL}_jacp, func=${MODEL}_func, init=${MODEL}_init, par=${MODEL}_default, name="${MODEL}")
+EOF
 }
