@@ -151,6 +151,8 @@ if [ -f "$EXP" ]; then
 		[ "$BSD_WORD_BOUNDARIES" ] && sed -i.rm -e "s|[[:<:]]${ExpressionName}[[:>:]]|(${ExpressionFormula})|g" "$EXODE"
 	done
 fi
+# repeat in case the expressions had those
+sed -r -f "$dir/math.sed" "$ODE" > "$EXODE"
 
 # `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
 # just don't quote it like this: "$sv"
