@@ -152,7 +152,7 @@ if [ -f "$EXP" ]; then
 	done
 fi
 # repeat in case the expressions had those
-sed -r -f "$dir/math.sed" "$ODE" > "$EXODE"
+sed -i.rm -r -f "$dir/math.sed" "$EXODE"
 
 # `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
 # just don't quote it like this: "$sv"
