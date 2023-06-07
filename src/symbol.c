@@ -41,6 +41,9 @@ struct symbol* symbol_alloc_op(char op)
 {
   struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
+	if (op=='\0' || !strchr("+-*/",op)){
+		fprintf(stderr,"[%s] «%c» is not a known operatopr.\n",__func__,op);
+	}
 	assert(op!='\0' && strchr("+-*/",op));
 	n->type=symbol_operator;
 	n->op=op;
@@ -70,7 +73,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	p=s;
 	double d=strtod(s,&p);
 	if (s==p){
-		if (len==1 && c && strchr("+-*/^",c)){
+		if (len==1 && c && strchr("+-*/",c)){
 			n->type=symbol_operator;
 			n->op=c;
 			n->nargs=2;

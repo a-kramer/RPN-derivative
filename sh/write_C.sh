@@ -19,9 +19,9 @@ int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 	double *p_=par;
 	if (!y_ || !f_) return $((NV));
 EOF
-awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
 echo "\treturn GSL_SUCCESS;"
@@ -35,8 +35,8 @@ int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void 
 	if (!y_ || !jac_) return $((NV))*$((NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
@@ -53,8 +53,8 @@ int ${MODEL}_jacp(double t, const double y_[], double *jacp_, double *dfdt_, voi
 	if (!y_ || !jacp_) return $((NV))*$((NP));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NP`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
@@ -73,8 +73,8 @@ int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
 EOF
 
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 [ -f "$FUN" ] && awk -F '	' '{print "\tfunc_[" (NR-1) "] = " $2 "; /* " $1 " */"}' "$FUN"
 echo "\treturn GSL_SUCCESS;"
@@ -88,8 +88,8 @@ int ${MODEL}_default(double t, void *par)
 	double *p_=par;
 	if (!p_) return $((NP));
 EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tp_[" NR-1 "] = " $2 ";"}' "$PAR"
+[ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+awk -F '	' '{print "\tp_[" NR-1 "] = " $2 ";"}' "$PAR"
 printf "\treturn GSL_SUCCESS;\n}\n"
 
 cat<<EOF
@@ -100,8 +100,8 @@ int ${MODEL}_init(double t, double *y_, void *par)
 	if (!y_) return ${NV};
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 printf "\t/* the initial value of y may depend on the parameters. */\n"
-awk '{print "\ty_[" NR-1 "] = " $2 ";"}' "$VAR"
+awk -F '	' '{print "\ty_[" NR-1 "] = " $2 ";"}' "$VAR"
 printf "\treturn GSL_SUCCESS;\n}\n"
 }

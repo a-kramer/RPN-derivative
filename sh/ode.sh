@@ -155,12 +155,12 @@ fi
 # `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
 # just don't quote it like this: "$sv"
 for j in `seq 1 $NV`; do
-	sv=`awk -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+	sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
 	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
 done
 
 for j in `seq 1 $NP`; do
-	par=`awk -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+	par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
 	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
 done
 

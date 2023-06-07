@@ -58,7 +58,7 @@ struct ll* infix_to_rpn(char *infix)
 			s++;
 		} else if (*s == ')'){
 			while (stack && *(p=ll_pop(&stack))!='('){
-				ll_append(&rpn,symbol_alloc_op(*p));
+				ll_append(&rpn,symbol_alloc(p));
 				free(p);
 			}
 			s++;

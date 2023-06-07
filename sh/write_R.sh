@@ -15,7 +15,7 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 printf "\tf_<-vector(mode='numeric',len=%i)\n" $((NV))
 awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
 echo -n "\tnames(f_) <- c("
-awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+awk -F '	' -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
 echo ")"
 echo "## for some weird reason deSolve wants this to be a list:"
 echo "\treturn(list(f_))"
@@ -33,13 +33,13 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 printf "\tjac_ <- matrix(NA,%i,%i)\n" $((NV)) $((NV))
 for j in `seq 1 $NV`; do
 	echo "# column $j (df/dy_$((j-1)))"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
+	awk -F '	' -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/Jac_Column_${j}.txt
 done
 echo -n "\trownames(jac_) <- c("
-awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+awk -F '	' -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
 echo ")"
 echo -n "\tcolnames(jac_) <- c("
-awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+awk -F '	' -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
 echo ")"
 
 echo "\treturn(jac_)"
@@ -57,13 +57,13 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 printf "\tjacp_<-matrix(NA,%i,%i)\n" $((NV)) $((NP))
 for j in `seq 1 $NP`; do
 	echo "# column $j (df/dp_$((j)))"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
+	awk -F '	' -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/Jacp_Column_${j}.txt
 done
 echo -n "\trownames(jacp_) <- c("
-awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+awk -F '	' -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
 echo ")"
 echo -n "\tcolnames(jacp_) <- c("
-awk -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
+awk -F '	' -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
 echo ")"
 
 echo "\treturn(jacp_)"
@@ -83,7 +83,7 @@ awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 printf "\tfunc_ <- vector(mode='numeric',len=%i)\n" $((NF))
 [ -f "$FUN" ] && awk -F '	' '{print "\tfunc_[" NR "] <- " $2 " # " $1 }' "$FUN"
 echo -n "\tnames(func_) <- c("
-awk -v n=$((NF)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$FUN"
+awk -F '	' -v n=$((NF)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$FUN"
 echo ")"
 
 echo "\treturn(func_)"
@@ -99,7 +99,7 @@ EOF
 printf "\tparameters <- vector(mode='numeric',len=%i)\n" $((NP))
 awk '{print "\tparameters[" NR "] <- " $2 }' "$PAR"
 echo -n "\tnames(parameters) <- c("
-awk -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
+awk -F '	' -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
 echo ")"
 printf "\treturn(parameters);\n}\n"
 
@@ -114,7 +114,7 @@ printf "\t# the initial value may depend on the parameters. \n"
 printf "\tstate<-vector(mode='numeric',len=%i)\n" $((NV))
 awk '{print "\tstate[" NR "] <- " $2 }' "$VAR"
 echo -n "\tnames(state) <- c("
-awk -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+awk -F '	' -v n=$((NV)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
 echo ")"
 printf "\treturn(state)\n}\n"
 
