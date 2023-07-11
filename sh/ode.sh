@@ -191,18 +191,18 @@ fi
 # repeat in case the expressions had those
 sed -i.rm -r -f "$dir/math.sed" "$EXODE"
 
-if [ "$backend" == "yacas" ]; then
+if [ "$backend" = "yacas" ]; then
 	exit;
-elif [ "$backend" == "maxima" ]; then
+elif [ "$backend" = "maxima" ]; then
 	. "${dir}/maxima.sh"
 	for j in `seq 1 $NV`; do
 		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
-		maxima_derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+		maxima_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
 	done
 
 	for j in `seq 1 $NP`; do
 		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
-		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+		maxima_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
 	done
 
 else
