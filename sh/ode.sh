@@ -4,6 +4,7 @@ MODEL="DemoModel"
 N=10
 PL="C"
 CLEAN="yes"
+backend="RPN derivative (this package)"
 
 # find the location of this file, so that we can source neighboring files
 {
@@ -28,17 +29,53 @@ BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/nul
 # make sure the temp folder exists
 [ -d "$TMP" ] || mkdir "$TMP"
 
+short_help() {
+	echo "$0 [-R|-C] [-N [0-9]+] ModelFile.vf > Model_src.[R|c]"
+	printf "\n"
+	echo "OPTIONS with default values"
+	echo "==========================="
+	printf "\n"
+	width=35
+	printf "%${width}s  " "--help|-h"
+	printf "print this help.\n"
+	printf "%${width}s  " "--c-source|-C"
+	printf "write C source code (default is $PL).\n"
+	printf "%${width}s  " "--r-source|-R"
+	printf "write R source code (default is $PL).\n"
+	printf "%${width}s  " "--simplify|-N $N"
+	printf "simplify derivative results $N times\n"
+	printf "%${width}s  " "--temp|-t $TMP"
+	printf "where to write intermediate files (an empty directory).\n"
+	printf "%${width}s  " "--no-clean|--inspect"
+	printf "keep intermediate files to check for errors.\n"
+	printf "%${width}s  " "--maxima|-M"
+	printf "use maxima to calculate derivatives\n\t\t\t\t\t(default is $backend).\n"
+	printf "%${width}s  " "--yacas|-Y"
+	printf "use yacas to calculate derivatives\n\t\t\t\t\t(default is $backend).\n"
+
+	echo "EXAMPLE"
+	echo "======="
+	printf "\n"
+	echo "	mkdir .tmp"
+	echo "	$0 -t ./.tmp --inspect -R myModel.vf > myModel.R"
+	echo "	ls .tmp"
+	exit
+}
+
 # read command line options
 while [ $# -gt 0 ]; do
- case $1 in
- -C) PL="C"; shift;;
- -R) PL="R"; shift;;
- [0-9]|[0-9][0-9]) N=$2; shift 2;;
- -n) N=$2; shift 2;;
- -t) TMP="$2"; shift 2;;
- --no-clean|--do-not-clean|--inspect) CLEAN="no"; shift;;
- *) MODEL="$1"; shift;;
- esac
+	case $1 in
+		--help|-h) short_help;;
+		--c-source|-C) PL="C"; shift;;
+		--r-source|-R) PL="R"; shift;;
+		[0-9]|[0-9][0-9]) N=$2; shift 2;;
+		--simplify|-n|-N) N=$2; shift 2;;
+		-t|--temp) TMP="$2"; shift 2;;
+		--no-clean|--do-not-clean|--inspect) CLEAN="no"; shift;;
+		--maxima|-M) backend="maxima"; shift;;
+		--yacas|-Y) backend="yacas"; shift;;
+		*) MODEL="$1"; shift;;
+	esac
 done
 
 BM=`basename "${MODEL}"`
@@ -154,18 +191,33 @@ fi
 # repeat in case the expressions had those
 sed -i.rm -r -f "$dir/math.sed" "$EXODE"
 
-# `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
-# just don't quote it like this: "$sv"
-for j in `seq 1 $NV`; do
-	sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
-	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
-done
+if [ "$backend" == "yacas" ]; then
+	exit;
+elif [ "$backend" == "maxima" ]; then
+	. "${dir}/maxima.sh"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		maxima_derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
 
-for j in `seq 1 $NP`; do
-	par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
-	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
-done
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+	done
 
+else
+## `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
+## just don't quote it like this: "$sv"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+fi
 
 ## In the next two lines, we read the code for writing output in the specified programming language, and then run the appropriate function
 . "$dir/write_${PL}.sh"
