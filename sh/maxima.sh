@@ -1,10 +1,8 @@
 # this defines the maxima backend
-
-# does the derivative of the first argument
-# with respect to the second argument
-# derivative "x*y" "x" -> "y"
 maxima_derivative () {
-	while read f ; do
-		echo "display2d:false\$ diff($f,$1,1);" | maxima --very-quiet | sed -E -e '1d' -f $dir/maxima-to-$PL.sed
-	done
+	if [ $# -gt 0 ]; then
+		awk -v X="$1" "BEGIN {print \"display2d:false\$\"}; {print \"diff(\" \$0 \",\"X\",1);\"};" | maxima --very-quiet | sed -E -e '1d' -f ${dir:-.}/maxima-to-${PL:-C}.sed
+	else
+		echo "«$@» [missing mandatory argument (variable name)]"
+	fi
 }

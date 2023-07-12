@@ -192,7 +192,16 @@ fi
 sed -i.rm -r -f "$dir/math.sed" "$EXODE"
 
 if [ "$backend" = "yacas" ]; then
-	exit;
+	. "${dir}/yacas.sh"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		yacas_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		yacas_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+	done
 elif [ "$backend" = "maxima" ]; then
 	. "${dir}/maxima.sh"
 	for j in `seq 1 $NV`; do
