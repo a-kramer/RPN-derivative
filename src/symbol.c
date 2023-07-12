@@ -77,7 +77,11 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 			n->type=symbol_operator;
 			n->op=c;
 			n->nargs=2;
-		} else if(c=='@') {
+		} else if (c=='^') {
+			n->type=symbol_function;
+			n->f=f_pow;
+			n->nargs=2;
+		} else if (c=='@') {
 			n->type=symbol_function;
 			n->f=match_func(s+1);
 			n->nargs=fnargs[n->f];
