@@ -92,7 +92,7 @@ echo "}"
 
 cat<<EOF
 # ode default parameters; can depend on constants, and time  of initialization
-${MODEL}_default<-function(t)
+${MODEL}_default<-function(t=0.0)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
@@ -105,7 +105,7 @@ printf "\treturn(parameters);\n}\n"
 
 cat<<EOF
 # ode initial values
-${MODEL}_init<-function(t, parameters)
+${MODEL}_init<-function(t=0.0, parameters=NA)
 {
 EOF
 [ -f "$CON" ] && awk '{print "\t" $1 "<-" $2 }' "$CON"
