@@ -1,3 +1,5 @@
 README.html
 bin
 tests/ll_test
+*.orig
+*~
