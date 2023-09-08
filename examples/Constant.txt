@@ -1,1 +1,1 @@
-inv_tau 1000
+inv_tau	1000

@@ -6,10 +6,14 @@ external libraries.
 
 Specifically, this project aims to automatically calculate the
 Jacobian of a vector valued function used as right hand side in
-ordinary differential equations.
+ordinary differential equations. For this purpose we wrote
+[ode.sh](sh/ode.sh). The `ode.sh` script uses the `derivative` binary
+of this package by default, but can also try to use maxima or yacas
+instead.
 
 There are many software packages that can do this and much more
-(computer algebra systems). Here is a [list of alternatives](alternatives.md).
+(computer algebra systems). Here is a [list of
+alternatives](alternatives.md).
 
 ## Summary
 

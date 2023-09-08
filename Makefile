@@ -1,4 +1,6 @@
 CC = cc
+## this will set the maximum size of variable names to 100 [default: 64]
+#CFLAGS = -Wall -Wfatal-errors -O2 -march=native -DMAX_NAME_SIZE=100
 CFLAGS = -Wall -Wfatal-errors -O2 -march=native
 PREFIX = /usr/local/bin
 MANPREFIX = /usr/local/man/man1

@@ -1,24 +1,139 @@
 #!/bin/sh
 
-MODEL=${1:-"DemoModel"}
-N=${2:-6}
-TMP=${3:-/dev/shm/ode_gen}
+MODEL="DemoModel"
+N=10
+PL="C"
+CLEAN="yes"
+backend="RPN derivative (this package)"
 
+# find the location of this file, so that we can source neighboring files
+{
+if [ -f "$0" ]; then
+	src="$0"
+elif [ "`alias $0`" ]; then
+	src=`alias "$0" | awk -F= '{print $2}' | tr -d "'"`
+else
+	src=`readlink -f "$0"`
+fi
+[ "$src" ] && dir=`dirname $src` || dir="."
+} 2>/dev/null
+# ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
+
+# find out how the current system's sed matches word boundaries:
+GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
+BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
+# the above strings will be empty if an error occurred
+
+# check whether /dev/shm exists
+[ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"
 # make sure the temp folder exists
-[ -d "${TMP}" ] || (mkdir "${TMP}" || TMP='.')
+[ -d "$TMP" ] || mkdir "$TMP"
 
-OPTTIONS="-type f"
+short_help() {
+	echo "$0 [-R|-C] [-N [0-9]+] ModelFile.vf > Model_src.[R|c]"
+	printf "\n"
+	echo "OPTIONS with default values"
+	echo "==========================="
+	printf "\n"
+	width=35
+	printf "%${width}s  " "--help|-h"
+	printf "print this help.\n"
+	printf "%${width}s  " "--c-source|-C"
+	printf "write C source code (default is $PL).\n"
+	printf "%${width}s  " "--r-source|-R"
+	printf "write R source code (default is $PL).\n"
+	printf "%${width}s  " "--simplify|-N $N"
+	printf "simplify derivative results $N times\n"
+	printf "%${width}s  " "--temp|-t $TMP"
+	printf "where to write intermediate files (an empty directory).\n"
+	printf "%${width}s  " "--no-clean|--inspect"
+	printf "keep intermediate files to check for errors.\n"
+	printf "%${width}s  " "--maxima|-M"
+	printf "use maxima to calculate derivatives\n\t\t\t\t\t(default is $backend).\n"
+	printf "%${width}s  " "--yacas|-Y"
+	printf "use yacas to calculate derivatives\n\t\t\t\t\t(default is $backend).\n"
 
-CON=`find . $OPTIONS -regex ".*[Cc]onstants?\.t[xs][tv]$" -print -quit`
-VAR=`find . $OPTIONS -regex ".*\([Ss]tate\)?[Vv]ariables?\.t[xs][vt]$" -print -quit`
-PAR=`find . $OPTIONS -regex ".*\([Mm]odel\)?[Pp]arameters?\.t[xs][vt]$" -print -quit`
-FUN=`find . $OPTIONS -regex ".*\([Oo]utput\)?[Ff]unctions?\.t[xs][vt]$" -print -quit`
-EXP=`find . $OPTIONS -regex ".*[Ee]xpressions?\([Ff]ormulae?\)?\.t[xs][vt]$" -print -quit`
-ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
+	echo "EXAMPLE"
+	echo "======="
+	printf "\n"
+	echo "	mkdir .tmp"
+	echo "	$0 -t ./.tmp --inspect -R myModel.vf > myModel.R"
+	echo "	ls .tmp"
+	exit
+}
 
-# print some help if something is not right
-(
-if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
+# read command line options
+while [ $# -gt 0 ]; do
+	case $1 in
+		--help|-h) short_help;;
+		--c-source|-C) PL="C"; shift;;
+		--r-source|-R) PL="R"; shift;;
+		[0-9]|[0-9][0-9]) N=$2; shift 2;;
+		--simplify|-n|-N) N=$2; shift 2;;
+		-t|--temp) TMP="$2"; shift 2;;
+		--no-clean|--do-not-clean|--inspect) CLEAN="no"; shift;;
+		--maxima|-M) backend="maxima"; shift;;
+		--yacas|-Y) backend="yacas"; shift;;
+		*) MODEL="$1"; shift;;
+	esac
+done
+
+BM=`basename "${MODEL}"`
+
+#Default Names
+CON="Constants.txt"
+PAR="Parameters.txt"
+EXP="Expressions.txt"
+VAR="StateVariables.txt"
+FUN="OutputFunctions.txt"
+ODE="ODE.txt"
+
+
+# a block that creates some output that is not code
+{
+if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
+	INFO=`zipinfo -1 "$MODEL"`
+	echo "$INFO"
+	CON=`echo "$INFO" | egrep -i 'Constants?\.t[xs][tv]$'`
+	VAR=`echo "$INFO"  | egrep -i '(State)?Variables?\.t[xs][vt]$'`
+	PAR=`echo "$INFO"  | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
+	FUN=`echo "$INFO"  | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
+	EXP=`echo "$INFO"  | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
+	ODE=`echo "$INFO"  | egrep -i '.*ode\.t[xs][vt]$'`
+	echo "unzip -u -q -d $TMP $MODEL *.t[xs][tv]"
+	[ "$VAR" -a "$PAR" -a "$ODE" ] && unzip -u -q -d "$TMP" "$MODEL" "*.t[xs][tv]"
+	MODEL=`basename -s .zip "${MODEL}"`
+elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
+	INFO=`tar tf "$MODEL"`
+	echo "$INFO"
+	CON=`echo "$INFO" | egrep -i 'Constants?\.t[xs][tv]$'`
+	VAR=`echo "$INFO" | egrep -i '(State)?Variables?\.t[xs][vt]$'`
+	PAR=`echo "$INFO" | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
+	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
+	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
+	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
+	echo "tar xzf -C $TMP $MODEL"
+	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
+	MODEL=`basename -s .tar.gz "${MODEL}"`
+elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
+	echo "Using this vector field file: $MODEL"
+	sed -r -n -e 's|^[ ]*<Constant.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$CON"
+	sed -r -n -e 's|^[ ]*<Parameter.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$PAR"
+	sed -r -n -e 's|^[ ]*<Expression.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$EXP"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*DefaultInitialCondition="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$VAR"
+	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
+	# we take the model's name from the file's content
+	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
+	echo "Name of the Model according to vfgen file: $MODEL"
+else
+	OPTTIONS="-type f"
+	[ -z "$CON" ] && CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
+	[ -z "$VAR" ] && VAR=`find . $OPTIONS -iregex ".*\(State\)?Variables?\.t[xs][vt]$" -print -quit`
+	[ -z "$PAR" ] && PAR=`find . $OPTIONS -iregex ".*\(Model\)?Parameters?\.t[xs][vt]$" -print -quit`
+	[ -z "$FUN" ] && FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
+	[ -z "$EXP" ] && EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
+	[ -z "$ODE" ] && ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
@@ -26,189 +141,103 @@ if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
 	echo "EXP «$EXP»"
 	echo "FUN «$FUN»"
 	echo "ODE «$ODE»"
-else
-	echo "Usage: $0 [ModelName] [N] [TMP]"
-	echo;
-	echo "This assumes that `pwd` contains the four mandatory files:"
-	echo "     Variables.txt   the names of all state variables, one per line, "
-	echo "                     with initial value, and a unit of measurement, separated by a tab"
-	echo "    Parameters.txt   parameter names, one per line"
-
-	echo "                     expressions, state variables, parameters, and constants"
-	echo "           ODE.txt   mathematical formulae of how the ODE's right hand side is calculated using "
-	echo "                     fluxes, expressions, state variables, parameters, and constants"
-	echo;
-	echo "Some files are optional:"
-	echo "     Constants.txt   names and values of constants, one name value pair per line, "
-	echo "                     separated by a tab"
-	echo "   Expressions.txt   a file with expression names and formulae (right hand side) comprising "
-	echo "                     constants, parameters, and state variables, separated by either '=' or tab"
-	echo "     Functions.txt   a file with named expressions (one per line) that define (observable) model outputs, "
-	echo "                     name and value sepearated by a tab."
-	echo;
-	echo "Some temporary files will be created in ${TMP}, this location can be changed by setting the third command line argument."
-	echo "All derivatives will be simplified N times. (simplication means: «x+0=x» or «x*1=x», and similar things)"
-	echo "The default model name is 'DemoModel'."
-	exit 1	
+	echo "copying to $TMP"
+	for f in "$CON" "$PAR" "$VAR" "$EXP" "$ODE" "$FUN" ; do
+		[ "$f" -a -f "$f" ] && cp "$f" "$TMP"
+	done
+	CON=`basename "$CON"`
+	PAR=`basename "$PAR"`
+	VAR=`basename "$VAR"`
+	EXP=`basename "$EXP"`
+	FUN=`basename "$FUN"`
+	ODE=`basename "$ODE"`
 fi
+} 1>&2
 
-if [ -z `which derivative` ]; then
-	echo "[warning] the 'derivative' program is not installed."
-	echo "	if you prefer to use a compiled but not installed copy,"
-	echo "	then you can use an alias (named 'derivative'):"
-	echo "		alias derivative='./bin/derivative'"
-fi
-) 1>&2
+# now all files should exist in the temp directory, so we set new paths:
+[ "$CON" ] && CON="$TMP/$CON"
+[ "$PAR" ] && PAR="$TMP/$PAR"
+[ "$EXP" ] && EXP="$TMP/$EXP"
+[ "$VAR" ] && VAR="$TMP/$VAR"
+[ "$FUN" ] && FUN="$TMP/$FUN"
+[ "$ODE" ] && ODE="$TMP/$ODE"
+
+. $dir/help.sh
 
 NV=`wc -l < "$VAR"`
 NP=`wc -l < "$PAR"`
 [ -f "$EXP" ] && NE=`wc -l < "$EXP"` || NE=0
 [ -f "$FUN" ] && NF=`wc -l < "$FUN"` || NF=0
 
-(
+{
 echo "$NV state variables, $NP parameters, $NE expressions, $NF functions"
 echo "y-jacobian df[i]/dy[j] has size $((NV*NV)) ($NV×$NV)"
 echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
-) 1>&2
+} 1>&2
 
 # make a copy of ODE.txt, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
-## step 1, remove unary plusses and minuses
-sed -r -e 's/(exp|sin|cos|tan)/@\1/g' \
-       -e 's/^([ ]*[-][ ]*([a-zA-Z_(]))/-1*\2/g' \
-       -e 's/^([ ]*[+][ ]*([a-zA-Z_(]))/\2/g' \
-       -e 's|\([ ]*([-][ ]*([a-zA-Z_(]))|(-1*\2|g' \
-       -e 's|\([ ]*([+][ ]*([a-zA-Z_(]))|(\2|g' "$ODE" > "$EXODE"
+## step 1, remove unary plusses and minuses, add @ to functions, see math.sed for patterns
+sed -r -f "$dir/math.sed" "$ODE" > "$EXODE"
 ## step 2 substitute expression names for their values (formulae)
 if [ -f "$EXP" ]; then
 	for j in `seq $NE -1 1`; do
-		ExpressionName=`awk -F '	' -v j=$j 'NR==j {print $1}' "$EXP"`
-		ExpressionFormula=`awk -F '	' -v j=$j 'NR==j {print $2}' "$EXP"`
-		sed -i.rm -e "s|${ExpressionName}|(${ExpressionFormula})|g" "$EXODE"
+		ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$EXP"`
+		ExpressionFormula=`awk -F '	' -v j=$((j)) 'NR==j {print $2}' "$EXP"`
+		[ "$GNU_WORD_BOUNDARIES" ] && sed -i.rm -e "s|\<${ExpressionName}\>|(${ExpressionFormula})|g" "$EXODE"
+		[ "$BSD_WORD_BOUNDARIES" ] && sed -i.rm -e "s|[[:<:]]${ExpressionName}[[:>:]]|(${ExpressionFormula})|g" "$EXODE"
+	done
+fi
+# repeat in case the expressions had those
+sed -i.rm -r -f "$dir/math.sed" "$EXODE"
+
+if [ "$backend" = "yacas" ]; then
+	. "${dir}/yacas.sh"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		yacas_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		yacas_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+elif [ "$backend" = "maxima" ]; then
+	. "${dir}/maxima.sh"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		maxima_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		maxima_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+else
+## `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
+## just don't quote it like this: "$sv"
+	for j in `seq 1 $NV`; do
+		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
+		to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+	done
+
+	for j in `seq 1 $NP`; do
+		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
+		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
 	done
 fi
 
-for j in `seq 1 $NV`; do
-	sv=`sed -n -e "${j}p" "$VAR"`
-	to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt"
-done
+## In the next two lines, we read the code for writing output in the specified programming language, and then run the appropriate function
+. "$dir/write_${PL}.sh"
+write_in_$PL
 
-for j in `seq 1 $NP`; do
-	par=`sed -n -e "${j}p" "$PAR"`
-	to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt"
-done
-
-
-# write a gsl ode model file:
-
-cat<<EOF
-#include <stdlib.h>
-#include <math.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_odeiv2.h>
-
-/* The error code indicates how to pre-allocate memory
- * for output values such as \`f_\`. The _vf function returns
- * the number of state variables, if any of the args are \`NULL\`.
- * evaluation errors can be indicated by negative return values.
- * GSL_SUCCESS (0) is returned when no error occurred.
- */
-
-/* ode vector field: y'=f(t,y;p), the Activation expression is currently unused */
-int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
+## (optional) cleaning procedure
 {
-	double *p_=par;
-	if (!y_ || !f_) return ${NV};
-EOF
-awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-cat<<EOF
-/* ode Jacobian df(t,y;p)/dy */
-int ${MODEL}_jac(double t, const double y_[], double *jac_, double *dfdt_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !jac_) return ${NV}*${NV};
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-for j in `seq 1 $NV`; do
-	echo "/* column $j (df/dy_$((j-1))) */"
-	awk -v n=$NV -v j=$j '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jac_Column_${j}.txt
-done
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-cat<<EOF
-/* ode parameter Jacobian df(t,y;p)/dp */
-int ${MODEL}_jacp(double t, const double y_[], double *jacp_, double *dfdt_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !jacp_) return ${NV}*${NP};
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-for j in `seq 1 $NP`; do
-	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$NP -v j=$j '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 ";"}' $TMP/Jacp_Column_${j}.txt
-done
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-
-cat<<EOF
-/* ode Functions F(t,y;p) */
-int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
-{
-	double *p_=par;
-	if (!y_ || !func_) return `wc -l < "$FUN"`;
-EOF
-
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
-[ -f "$FUN" ] && awk '{print "\tfunc_[" (NR-1) "] = " $0 ";"}' "$FUN"
-echo "\treturn GSL_SUCCESS;"
-echo "}"
-
-
-cat<<EOF
-/* ode default parameters */
-int ${MODEL}_default(double t, void *par)
-{
-	double *p_=par;
-	if (!p_) return `wc -l < "$PAR"`;
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tp_[" NR-1 "] = " $2 ";"}' "$PAR"
-printf "\treturn GSL_SUCCESS;\n}\n"
-
-cat<<EOF
-/* ode initial values */
-int ${MODEL}_init(double t, double *y_, void *par)
-{
-	double *p_=par;
-	if (!y_) return ${NV};
-EOF
-[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-printf "\t/* the initial value of y may depend on the parameters. */\n"
-awk '{print "\ty_[" NR-1 "] = " $2 ";"}' "$VAR"
-printf "\treturn GSL_SUCCESS;\n}\n"
-
-## cleaning procedure
-#if [ -d $TMP ]; then
-#	rm $TMP/*.rm
-#	rm $TMP/d*_d*.txt
-#	rm $TMP/Jac*_Column_*.txt
-#fi
+if [ "$CLEAN" = "yes" -a -d "$TMP" ]; then
+	rm $TMP/*
+else
+	echo "The temporary files are in ${TMP}:"
+	ls "$TMP"
+fi
+} 1>&2
