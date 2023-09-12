@@ -1,5 +1,5 @@
 # yacas is weird about printing things on screen, but passing linesone by one seems to work.
-yacas_derivative () {
+Derivative () {
 	# yacas does not allow _ in symbol names, nor other special characters, like ~
 	arg=`echo $1 | sed 's/_/UNDERSCORE/g'`
 	while read f ; do

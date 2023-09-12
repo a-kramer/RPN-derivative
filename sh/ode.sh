@@ -4,7 +4,7 @@ MODEL="DemoModel"
 N=10
 PL="C"
 CLEAN="yes"
-backend="RPN derivative (this package)"
+backend="_rpn" # derivative (this package)"
 
 # find the location of this file, so that we can source neighboring files
 {
@@ -175,58 +175,31 @@ echo "y-jacobian df[i]/dy[j] has size $((NV*NV)) ($NV×$NV)"
 echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 } 1>&2
 
-# make a copy of ODE.txt, but with all expressions substituted
+. $dir/expression_substitution.sh
+
+# make a copy of ODE.txt and FUN, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
-## step 1, remove unary plusses and minuses, add @ to functions, see math.sed for patterns
-sed -r -f "$dir/math.sed" "$ODE" > "$EXODE"
-## step 2 substitute expression names for their values (formulae)
-if [ -f "$EXP" ]; then
-	for j in `seq $NE -1 1`; do
-		ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$EXP"`
-		ExpressionFormula=`awk -F '	' -v j=$((j)) 'NR==j {print $2}' "$EXP"`
-		[ "$GNU_WORD_BOUNDARIES" ] && sed -i.rm -e "s|\<${ExpressionName}\>|(${ExpressionFormula})|g" "$EXODE"
-		[ "$BSD_WORD_BOUNDARIES" ] && sed -i.rm -e "s|[[:<:]]${ExpressionName}[[:>:]]|(${ExpressionFormula})|g" "$EXODE"
-	done
-fi
-# repeat in case the expressions had those
-sed -i.rm -r -f "$dir/math.sed" "$EXODE"
+substitute "$EXP" "$ODE" "$EXODE"
+EXFUN="${TMP}/explicit_func.txt"
+substitute "$EXP" "$FUN" "$EXFUN"
 
-if [ "$backend" = "yacas" ]; then
-	. "${dir}/yacas.sh"
-	for j in `seq 1 $NV`; do
-		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
-		yacas_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+## Jacobian MATH_FILE INDEP_VARIABLES_FILE OUT_PREFIX
+Jacobian () {
+	NVAR=$((`wc -l < "$2"`))
+	for j in `seq 1 $NVAR`; do
+		v=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$2"`
+		Derivative $v < "$1" > "${TMP}/${3}${j}.txt"
 	done
+}
 
-	for j in `seq 1 $NP`; do
-		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
-		yacas_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
-	done
-elif [ "$backend" = "maxima" ]; then
-	. "${dir}/maxima.sh"
-	for j in `seq 1 $NV`; do
-		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
-		maxima_derivative $sv < "$EXODE" > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
-	done
+> "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
+## do the derivatives
+. "$dir/${backend}.sh"
+Jacobian "$EXODE" "$VAR" "Jac_Column_"
+Jacobian "$EXODE" "$PAR" "Jacp_Column_"
+Jacobian "$EXFUN" "$VAR" "funcJac_Column_"
+Jacobian "$EXFUN" "$PAR" "funcJacp_Column_"
 
-	for j in `seq 1 $NP`; do
-		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
-		maxima_derivative $par < "$EXODE" > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
-	done
-
-else
-## `derivative` will ignore options beyond the first, so $sv may have more than just a name in it
-## just don't quote it like this: "$sv"
-	for j in `seq 1 $NV`; do
-		sv=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$VAR"`
-		to_rpn < "$EXODE" | derivative $sv | simplify $N | to_infix > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
-	done
-
-	for j in `seq 1 $NP`; do
-		par=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$PAR"`
-		to_rpn < "$EXODE" | derivative $par | simplify $N | to_infix > "${TMP}/Jacp_Column_${j}.txt" 2> "$TMP/error.log"
-	done
-fi
 
 ## In the next two lines, we read the code for writing output in the specified programming language, and then run the appropriate function
 . "$dir/write_${PL}.sh"
