@@ -6,16 +6,25 @@ defines function interfaces for an ordinary differential equation (ODE) system.
 
 $$
 \begin{align}
-\dot y &= f(t,y;p) \\
- y(t_0) &= y_0
+\dot y &= f(t,y;p)\,\\
+ y(t_0) &= y_0\,\\
+ F(t_k,y(t_k);p) - \text{z_k} &\sim \mathcal{N}(0,\Sigma_k)\,\\ 
 \end{align}
 $$
 
-The script [ode.sh](./ode.sh) generates these right-hand-side functions $f$ in C or R (perhaps more languages later). Additionally the script writes an analytical *Jacobian* $df/dy$, *parameter Jacobian* $df/dp$, and an output function that models *observable quanities*.
+where the *output function* $F$ models the *measurement* process and
+corresponds to measured data $z$. This is only relevant if the ODE system corresponds to some
+real system ($F$ is optional).
+
+The script [ode.sh](./ode.sh) generates these right-hand-side
+functions $f$ in C or R (perhaps more languages later). Additionally
+the script writes an analytical *Jacobian* $df/dy$, *parameter
+Jacobian* $df/dp$, and an output function that models *observable
+quanities*.
 
 **Note on platforms** we try to make this script run with GNU tools as well as BSD tools (i.e.: options to *find*, *awk*, and *sed*).
 
-**Note on C functions:** In addition to the requirements of the 
+**Note on C functions:** In addition to the requirements of the
 GNU scientific library, the functions return the length of the return buffer they
 expect when called with NULL pointers instead of allocated output
 buffers. For the demo model in [../examples/](../examples), this is:
@@ -55,7 +64,7 @@ $ ./ode.sh -h
 otputs:
 
 ```
-ode.sh [-R|-C] [-N [0-9]+] ModelFile.vf > Model_src.[R|c]
+ode.sh [-R|-C] [-H] [-N [0-9]+] ModelFile.[vf|zip|tar.gz] > Model_src.[R|c]
 
 OPTIONS with default values
 ===========================
@@ -63,6 +72,7 @@ OPTIONS with default values
                           --help|-h  print this help.
                       --c-source|-C  write C source code (default is C).
                       --r-source|-R  write R source code (default is C).
+                       --hessian|-H  also write all possible Hessians (ODE-f or output function F, with respect to state variables or parameters)
                    --simplify|-N 10  simplify derivative results 10 times
          --temp|-t /dev/shm/ode_gen  where to write intermediate files (an empty directory).
                --no-clean|--inspect  keep intermediate files to check for errors.
@@ -95,6 +105,17 @@ All backends require some output molding to translate it to C source
 code (or R, etc.). Each language has its idiosyncrasies (C does not
 see `^` as power, while R and maxima do). So, the output must be checked for errors andverified.
 
+## Output
+
+The script's output is printed on screen and can be redirected into a
+file. Standard is internally redirected to `$TMP/error.log`.
+
+The created functions include all Jacobians ($df/dy$, $df/dp$,
+$dF/dy$, $dF/dp$), and if the `-H` option is supplied also Hessians
+(also all possible combinations, for output functions
+$d^2F(t,y;p)/dp_i dp_j$, $d^2F(t,y;p)/dy_i dy_j$ and ODE vector field
+$f(t,y;p)$).
+
 ## Input Files
 
 This script assumes the presence of text files that describe a dynamic
@@ -118,9 +139,9 @@ capitalized (`parameters` or `Parameters`). Plural forms are optional
 names are possible (`Expression.txt` or `ExpressionFormula.txt`).
 
 In addition, the text files may have names ending in tsv and use tabs
-as separators. For files containing math formulae tabs are mandatory 
-as math can contain spaces. The file can still end in txt, regardless 
-of field separator used. 
+as separators. For files containing math formulae tabs are mandatory
+as math can contain spaces. The file can still end in txt, regardless
+of field separator used.
 
 ```sh
 $ tar tf DemoModel.tar.gz
@@ -212,9 +233,7 @@ y[1] = +exp_nxt*0.1;
 /* and so forth */
 ```
 
-(or whatever).
-
-The contents of the file are: `name \t formula`, one expression per line (tab separated).
+The contents of the file are: `name \t formula`, one expression per line (tab separated, because tabs are never part of math expressions).
 
 Expression.txt:
 
@@ -224,11 +243,12 @@ Activation	1/(1-exp(-(t-t_on)*inv_tau))
 
 ### Functions (optional)
 
-Functions or rather *Output Functions* will be translated into on c
+Functions or rather *Output Functions* will be translated into one c
 function that returns a vector of values that depend on a state
-vector, parameters and time. These functions can be used to model
-observable quantities of an experiment (for such cases where the state
-of the system cannot be observed entirely).
+vector, parameters and time (and internally on the constants, of
+course). These functions can be used to model observable quantities of
+an experiment (for such cases where the state of the system cannot be
+observed entirely).
 
 This is an example for an output function:
 
