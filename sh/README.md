@@ -8,7 +8,7 @@ $$
 \begin{align}
 \dot y &= f(t,y;p)\,\\
  y(t_0) &= y_0\,\\
- F(t_k,y(t_k);p) - \text{z_k} &\sim \mathcal{N}(0,\Sigma_k)\,\\ 
+ F(t_k,y(t_k);p) - z_k &\sim \mathcal{N}(0,\Sigma_k)\, 
 \end{align}
 $$
 
