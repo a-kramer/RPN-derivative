@@ -1,4 +1,4 @@
-# yacas is weird about printing things on screen, but passing linesone by one seems to work.
+# yacas is weird about printing things on screen, but passing lines one by one seems to work.
 Derivative () {
 	# yacas does not allow _ in symbol names, nor other special characters, like ~
 	arg=`echo $1 | sed 's/_/UNDERSCORE/g'`

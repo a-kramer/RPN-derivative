@@ -1,3 +1,8 @@
+# print row-names as one comma separated string
+Names () {
+	num=$(( `wc -l < "$1"` ))
+	awk -F '	' -v n=$((num)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$1"
+}
 
 write_in_R () {
 # write a gsl ode model file:
@@ -123,4 +128,111 @@ printf "\treturn(state)\n}\n"
 cat<<EOF
 model<-list(vf=${MODEL}_vf, jac=${MODEL}_jac, jacp=${MODEL}_jacp, func=${MODEL}_func, init=${MODEL}_init, par=${MODEL}_default, name="${MODEL}")
 EOF
+}
+
+
+write_Hessian_in_R () {
+
+# Hessian
+cat<<EOF
+# ODE Hessian d^2 f(t,y;p)[k]/dy[i]dy[j]
+${MODEL}_Hessian<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tvarNames <- c("
+Names "$VAR"
+printf ")\n"
+printf "\thessian_<-arrray(NA,dim=c(%i,%i,%i),dimnames=list(varNames,varNames,varNames))\n" $((NV)) $((NV)) $((NV))
+for i in `seq $NV`; do
+	for j in `seq $i $NV`; do
+		echo "# hessian (df/dp_$((i))dp_$((j)))"
+		awk -F '	' -v i=$((i)) -v j=$((j)) '{print "\thessian_[" i "," j "," NR "] <- hessian_[" j "," i "," NR "] <- " $0 }' "$TMP/Hessian_$((i))_$((j)).txt"
+	done
+done
+echo "\treturn(hessian_)"
+echo "}"
+
+# Parameter Hessian
+cat<<EOF
+# ODE parameter Hessian d^2 f(t,y;p)[k]/dp[i]dp[j]
+${MODEL}_parHessian<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tvarNames <- c("
+Names "$VAR"
+printf ")\n"
+printf "\tparNames <- c("
+Names "$PAR"
+printf ")\n"
+printf "\tparHessian_<-arrray(NA,dim=c(%i,%i,%i),dimnames=list(parNames,parNames,varNames))\n" $((NP)) $((NP)) $((NV))
+for i in `seq $NP`; do
+	for j in `seq $i $NP`; do
+		echo "# parameter hessian (df/dp_$((i))dp_$((j)))"
+		awk -F '	' -v i=$((i)) -v j=$((j)) '{print "\tparHessian_[" i "," j "," NR "] <- parHessian_[" j "," i "," NR "] <- " $0 }' "$TMP/parHessian_$((i))_$((j)).txt"
+	done
+done
+echo "\treturn(parHessian_)"
+echo "}"
+
+# Function Hessian
+cat<<EOF
+# (output) Function Hessian d^2 F(t,y;p)[k]/dy[i]dy[j]
+${MODEL}_funcHessian<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tvarNames <- c("
+Names "$VAR"
+printf ")\n"
+printf "\tfuncNames <- c("
+Names "$FUN"
+printf ")\n"
+printf "\tfuncHessian_<-arrray(NA,dim=c(%i,%i,%i),dimnames=list(varNames,varNames,funcNames))\n" $((NV)) $((NV)) $((NF))
+for i in `seq $NV`; do
+	for j in `seq $i $NV`; do
+		echo "# func hessian (dF/dp_$((i))dp_$((j)))"
+		awk -F '	' -v i=$((i)) -v j=$((j)) '{print "\tfuncHessian_[" i "," j "," NR "] <- funcHessian_[" j "," i "," NR "] <- " $0 }' "$TMP/funcHessian_$((i))_$((j)).txt"
+	done
+done
+echo "\treturn(funcHessian_)"
+echo "}"
+
+# Function Parameter Hessian
+cat<<EOF
+# (output) Function Parameter Hessian d^2 F(t,y;p)[k]/dp[i]dp[j]
+${MODEL}_funcParHessian<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tparNames <- c("
+Names "$PAR"
+printf ")\n"
+printf "\tfuncNames <- c("
+Names "$FUN"
+printf ")\n"
+printf "\tfuncParHessian_<-arrray(NA,dim=c(%i,%i,%i),dimnames=list(parNames,parNames,funcNames))\n" $((NP)) $((NP)) $((NF))
+for i in `seq $NP`; do
+	for j in `seq $((i)) $NP`; do
+		echo "# func hessian (dF/dp_$((i))dp_$((j)))"
+		awk -F '	' -v i=$((i)) -v j=$((j)) '{print "\tfuncParHessian_[" i "," j "," NR "] <- funcParHessian_[" j "," i "," NR "] <- " $0 }' "$TMP/funcParHessian_$((i))_$((j)).txt"
+	done
+done
+echo "\treturn(funcParHessian_)"
+echo "}"
+
+
 }

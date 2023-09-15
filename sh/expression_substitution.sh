@@ -1,9 +1,14 @@
-#!/bin/bash
+#!/bin/sh
+
+ncol () {
+	head -n 1 "$1" | awk -F '	' '{print NF}'
+}
 
 ## substitute EXPRESSION_FILE MATH_FILE OUT_FILE
 substitute () {
-	NE=$((`wc -l < "$2"`))
-	[ "$dir" ] && sed -r -f "${dir}/math.sed" "$2" > "$3"
+	NE=$(( `wc -l < "$2"` ))
+	[ $((`ncol $2`)) -gt 1 ] && awk -F '	' '{print $2}' "$2" > "$3" || cp "$2" "$3"
+	[ "$dir" ] && sed -i.rm -r -f "${dir}/math.sed" "$3"
 	if [ -f "$1" ]; then
 		for j in `seq $NE -1 1`; do
 			ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$1"`

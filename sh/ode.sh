@@ -5,6 +5,7 @@ N=10
 PL="C"
 CLEAN="yes"
 backend="_rpn" # derivative (this package)"
+HESS=""
 
 # find the location of this file, so that we can source neighboring files
 {
@@ -68,6 +69,7 @@ while [ $# -gt 0 ]; do
 		--help|-h) short_help;;
 		--c-source|-C) PL="C"; shift;;
 		--r-source|-R) PL="R"; shift;;
+		--hessian|-H) HESS="yes"; shift;;
 		[0-9]|[0-9][0-9]) N=$2; shift 2;;
 		--simplify|-n|-N) N=$2; shift 2;;
 		-t|--temp) TMP="$2"; shift 2;;
@@ -179,33 +181,65 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 
 # make a copy of ODE.txt and FUN, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
+#substitute EXPRESSION_FILE MATH_FILE OUTPUT_FILE 
 substitute "$EXP" "$ODE" "$EXODE"
 EXFUN="${TMP}/explicit_func.txt"
 substitute "$EXP" "$FUN" "$EXFUN"
 
-## Jacobian MATH_FILE INDEP_VARIABLES_FILE OUT_PREFIX
+# look up name of varianble i
+# var i file
+var () {
+	i="$1"
+	file="$2"
+	awk -F '	' -v i=$((i)) 'NR==i {print $1}' "$file"
+}
+
+# source the backend specific `Derivative()` function
+. "$dir/${backend}.sh"
+# Jacobian MATH_FILE INDEP_VARIABLES_FILE OUT_PREFIX
 Jacobian () {
 	NVAR=$((`wc -l < "$2"`))
-	for j in `seq 1 $NVAR`; do
-		v=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$2"`
-		Derivative $v < "$1" > "${TMP}/${3}${j}.txt"
+	for j in `seq $NVAR`; do
+		v=`var $j "$2"`
+		Derivative $v < "$1" > "${TMP}/${3}_${j}.txt" 2> "$TMP/error.log"
+	done
+}
+
+# Hessian MATH_FILE INDEP_VARIABLES_FILE OUT_PREFIX
+Hessian () {
+	NVAR=$((`wc -l < "$2"`))
+	for i in `seq $NVAR` ; do
+		vi=`var $i "$2"`
+		firstDerivative="$TMP/${3}_$((i))"
+		Derivative $vi < "$1" > "${firstDerivative}.txt"
+		for j in `seq $i $NVAR` ; do
+			vj=`var $j "$2"`
+			Derivative $vj < "$firstDerivative.txt" > "${firstDerivative}_$((j)).txt"
+			[ $((j)) -gt $((i)) ] && ln -s "$TMP/${3}_$((i))_$((j)).txt" "$TMP/${3}_$((j))_$((i)).txt"
+		done
 	done
 }
 
 > "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
-## do the derivatives
-. "$dir/${backend}.sh"
-Jacobian "$EXODE" "$VAR" "Jac_Column_"
-Jacobian "$EXODE" "$PAR" "Jacp_Column_"
-Jacobian "$EXFUN" "$VAR" "funcJac_Column_"
-Jacobian "$EXFUN" "$PAR" "funcJacp_Column_"
+
+Jacobian "$EXODE" "$VAR" "Jac_Column"
+Jacobian "$EXODE" "$PAR" "Jacp_Column"
+[ "$HESS" ] && Hessian "$EXODE" "$PAR" "parHessian"
+[ "$HESS" ] && Hessian "$EXODE" "$VAR" "Hessian"
+Jacobian "$EXFUN" "$VAR" "funcJac_Column"
+Jacobian "$EXFUN" "$PAR" "funcJacp_Column"
+[ "$HESS" ] && Hessian "$EXFUN" "$PAR" "funcParHessian"
+[ "$HESS" ] && Hessian "$EXFUN" "$VAR" "funcHessian"
 
 
-## In the next two lines, we read the code for writing output in the specified programming language, and then run the appropriate function
+# In the next two lines, we source (`.`) the sh-code for writing output
+# in the specified programming language, and then run the appropriate
+# function
 . "$dir/write_${PL}.sh"
 write_in_$PL
+[ "$HESS" ] && write_Hessian_in_$PL
 
-## (optional) cleaning procedure
+# (optional) cleaning procedure
 {
 if [ "$CLEAN" = "yes" -a -d "$TMP" ]; then
 	rm $TMP/*
