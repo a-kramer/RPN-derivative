@@ -96,6 +96,52 @@ echo "}"
 
 
 cat<<EOF
+# output function Jacobian dF(t,y;p)/dp
+${MODEL}_funcJac<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tjac_<-matrix(NA,%i,%i)\n" $((NF)) $((NV))
+for j in `seq 1 $NV`; do
+	echo "# column $j (dF/dp_$((j)))"
+	awk -F '	' -v j=$((j)) '{print "\tjac_[" NR "," j "] <- " $0 }' $TMP/funcJac_Column_${j}.txt
+done
+echo -n "\trownames(jac_) <- c("
+awk -F '	' -v n=$((NF)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$FUN"
+echo ")"
+echo -n "\tcolnames(jac_) <- c("
+awk -F '	' -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$VAR"
+echo ")"
+echo "\treturn(jac_)"
+echo "}"
+
+cat<<EOF
+# output function parameter Jacobian dF(t,y;p)/dp
+${MODEL}_funcJacp<-function(t, state, parameters)
+{
+EOF
+[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2}' "$CON"
+awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+[ -f "$EXP" ] && awk -F '	' '{print "\t" $1 "<-" $2 }' "$EXP"
+printf "\tjacp_<-matrix(NA,%i,%i)\n" $((NF)) $((NP))
+for j in `seq 1 $NP`; do
+	echo "# column $j (dF/dp_$((j)))"
+	awk -F '	' -v j=$((j)) '{print "\tjacp_[" NR "," j "] <- " $0 }' $TMP/funcJacp_Column_${j}.txt
+done
+echo -n "\trownames(jacp_) <- c("
+awk -F '	' -v n=$((NF)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$FUN"
+echo ")"
+echo -n "\tcolnames(jacp_) <- c("
+awk -F '	' -v n=$((NP)) '{printf("\"%s\"%s",$1,((NR<n)?", ":""))}' "$PAR"
+echo ")"
+echo "\treturn(jacp_)"
+echo "}"
+
+cat<<EOF
 # ode default parameters; can depend on constants, and time  of initialization
 ${MODEL}_default<-function(t=0.0)
 {
@@ -126,7 +172,7 @@ printf "\treturn(state)\n}\n"
 ## finally, we collect all functions into one generic name,
 ## in case the model is processed by a script, to avoid "eval(as.name(...))"
 cat<<EOF
-model<-list(vf=${MODEL}_vf, jac=${MODEL}_jac, jacp=${MODEL}_jacp, func=${MODEL}_func, init=${MODEL}_init, par=${MODEL}_default, name="${MODEL}")
+model<-list(vf=${MODEL}_vf, jac=${MODEL}_jac, jacp=${MODEL}_jacp, func=${MODEL}_func, funcJac=${MODEL}_funcJac, funcJacp=${MODEL}_funcJacp, init=${MODEL}_init, par=${MODEL}_default, name="${MODEL}")
 EOF
 }
 
@@ -234,5 +280,10 @@ done
 echo "\treturn(funcParHessian_)"
 echo "}"
 
+echo
+
+cat<<EOF
+model<-c(model,hessian=${MODEL}_Hessian,funcHessian=${MODEL}_funcHessian, parHessian=${MODEL}_parHessian, funcParHessian=${MODEL}_funcParHessian)
+EOF
 
 }
