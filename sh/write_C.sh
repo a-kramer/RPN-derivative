@@ -96,7 +96,7 @@ cat<<EOF
 int ${MODEL}_funcJac(double t, const double y_[], double *funcJac_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NF*NV));
+	if (!y_ || !funcJac_) return $((NF*NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -117,7 +117,7 @@ cat<<EOF
 int ${MODEL}_funcJacp(double t, const double y_[], double *funcJacp_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NF*NP));
+	if (!y_ || !funcJacp_) return $((NF*NP));
 EOF
 
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
@@ -126,7 +126,7 @@ awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (dF/dp_$((j-1))) */"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tfuncJacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJacp_Column_${j}.txt"
+	awk -v n=$((NP)) -v j=$((j)) '{print "\tfuncJacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJacp_Column_${j}.txt"
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -173,7 +173,7 @@ cat<<EOF
 int ${MODEL}_funcParHessian(double t, const double y_[], double *funcParHessian_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NP*NP*NF));
+	if (!y_ || !funcParHessian_) return $((NP*NP*NF));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -196,7 +196,7 @@ cat<<EOF
 int ${MODEL}_funcHessian(double t, const double y_[], double *funcHessian_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NV*NV*NF));
+	if (!y_ || !funcHessian_) return $((NV*NV*NF));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -219,7 +219,7 @@ cat<<EOF
 int ${MODEL}_Hessian(double t, const double y_[], double *Hessian_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NV*NV*NV));
+	if (!y_ || !Hessian_) return $((NV*NV*NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
@@ -242,7 +242,7 @@ cat<<EOF
 int ${MODEL}_parHessian(double t, const double y_[], double *parHessian_, void *par)
 {
 	double *p_=par;
-	if (!y_ || !func_) return $((NP*NP*NV));
+	if (!y_ || !parHessian_) return $((NP*NP*NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"

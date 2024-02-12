@@ -181,7 +181,7 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 
 # make a copy of ODE.txt and FUN, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
-#substitute EXPRESSION_FILE MATH_FILE OUTPUT_FILE 
+#substitute EXPRESSION_FILE MATH_FILE OUTPUT_FILE
 substitute "$EXP" "$ODE" "$EXODE"
 EXFUN="${TMP}/explicit_func.txt"
 substitute "$EXP" "$FUN" "$EXFUN"
