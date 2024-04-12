@@ -8,6 +8,7 @@
 
 #define OPT_NONE 0
 #define OPT_SAFE_FRAC 1
+#define OPT_LATEX 2
 
 static int options=OPT_NONE;
 static double safety_val=DBL_MIN;
@@ -64,6 +65,66 @@ void to_infix(struct ll *pn){
 	}
 }
 
+void to_latex(struct ll *pn, int paren){
+	struct symbol *s;
+	struct symbol *next;
+	struct ll *a, *b;
+	int p;
+	int d;
+	if (pn) {
+		d=depth(pn);
+		s=ll_pop(&pn);
+		switch (s->type){
+		case symbol_operator:
+			b=pn;
+			a=ll_cut(b,depth(b)+1);
+			if (s->op=='/'){
+				printf("\\frac{");
+				to_latex(a,0);
+				printf("}{");
+				to_latex(b,0);
+				printf("}");
+			} else if (s->op=='*'){
+				next=a->value;
+				p=next->type==symbol_operator && strchr("+-",next->op)!=NULL;
+				to_latex(a,p);
+				printf(" ");
+				next=b->value;
+				p=next->type==symbol_operator && strchr("+-",next->op)!=NULL;
+				to_latex(b,p);
+			} else if (paren){
+				printf("(");
+				to_latex(a,0);
+				printf(" %c ",s->op);
+				to_latex(b,0);
+				printf(")");
+			} else {
+				to_latex(a,0);
+				printf(" %c ",s->op);
+				to_latex(b,0);
+			}
+			break;
+		case symbol_function:
+			if (s->f == f_pow){
+				b=pn;
+				a=ll_cut(b,depth(b)+1);
+				printf("{");
+				to_latex(a,0);
+				printf("}^{");
+				to_latex(b,0);
+				printf("}");
+			} else {
+				printf("\\%s\\left(",function_name(s->f));
+				to_latex(pn,0);
+				printf("\\right)");
+			}
+			break;
+		default:
+			symbol_print(s);
+		}
+	}
+}
+
 
 int main(int argc, char *argv[]){
 	size_t n=20;
@@ -91,6 +152,8 @@ int main(int argc, char *argv[]){
 		} else if (val && memcmp("--safe-frac",opt,l<11?l:11)==0){
 			options|=OPT_SAFE_FRAC;
 			d=strtod(val,NULL);
+		} else if (l>0 && memcmp("--latex",opt,l<7?l:7)==0){
+			options|=OPT_LATEX;
 		}
 		if (d>0) safety_val=d;
 	}
@@ -104,10 +167,12 @@ int main(int argc, char *argv[]){
 			ll_push(&r,symbol_alloc(p));
 			p=strtok(NULL,delim);
 		}
-		if (r){
+		if (r && (options & OPT_LATEX)) {
+			to_latex(r,0);
+		} else if (r) {
 			to_infix(r);
-			putchar('\n');
 		}
+		putchar('\n');
 	}
 	return EXIT_SUCCESS;
 }
