@@ -74,6 +74,7 @@ void to_latex(struct ll *pn, int paren){
 	if (pn) {
 		d=depth(pn);
 		s=ll_pop(&pn);
+		if (paren) printf("(");
 		switch (s->type){
 		case symbol_operator:
 			b=pn;
@@ -92,12 +93,6 @@ void to_latex(struct ll *pn, int paren){
 				next=b->value;
 				p=next->type==symbol_operator && strchr("+-",next->op)!=NULL;
 				to_latex(b,p);
-			} else if (paren){
-				printf("(");
-				to_latex(a,0);
-				printf(" %c ",s->op);
-				to_latex(b,0);
-				printf(")");
 			} else {
 				to_latex(a,0);
 				printf(" %c ",s->op);
@@ -108,8 +103,10 @@ void to_latex(struct ll *pn, int paren){
 			if (s->f == f_pow){
 				b=pn;
 				a=ll_cut(b,depth(b)+1);
+				next=a->value;
+				p=next->type==symbol_operator || next->type==symbol_function ;
 				printf("{");
-				to_latex(a,0);
+				to_latex(a,p);
 				printf("}^{");
 				to_latex(b,0);
 				printf("}");
@@ -120,8 +117,9 @@ void to_latex(struct ll *pn, int paren){
 			}
 			break;
 		default:
-			symbol_print(s);
+			latex_symbol(s);
 		}
+		if (paren) printf(")");
 	}
 }
 

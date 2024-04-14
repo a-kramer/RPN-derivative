@@ -131,6 +131,45 @@ void symbol_print(struct symbol *s) /* the symbol to print (number, operator, va
 	}
 }
 
+int greek(const char *str){
+	const char *g[]={"alpha","beta","gamma","delta","epsilon","zeta","eta","theta","iota","kappa","lambda","mu","nu","xi","pi","rho","sigma","tau","upsilon","phi","chi","psi","omega",NULL};
+	char **p=g;
+	while (*p !=NULL){
+		//fprintf(stderr,"[%s] comparing «%s» to «%s»\n",__func__,str,*p);
+		if (strcmp(str,*p)==0) return 1;
+		p++;
+	}
+	return 0;
+}
+
+/* This function prints a representation of the symbol, as appropriate
+ * for the type.
+ */
+void latex_symbol(struct symbol *s) /* the symbol to print (number, operator, varibale name, or function) */
+{
+	switch (s->type){
+	case symbol_number:
+		printf("%g",s->value);
+		break;
+	case symbol_var:
+		if (greek(s->name)){
+			printf("\\%s",s->name);
+		} else {
+			printf("%s",s->name);
+		}
+		break;
+	case symbol_operator:
+		printf("%c",s->op);
+		break;
+	case symbol_function:
+		printf("@%s",fname[s->f]);
+		break;
+	default:
+		putchar(' ');
+	}
+}
+
+
 /* This function checks whether the symbol is a number (at all). */
 int /* truth value (the normal kind) */
 is_numeric(struct symbol *s) /* the symbol to check */

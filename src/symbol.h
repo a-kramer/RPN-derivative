@@ -32,4 +32,5 @@ int symbol_cmpd(struct symbol *s, double y);
 int is_numeric(struct symbol *s);
 int is_equal(struct symbol *a, struct symbol *b);
 const char* function_name(enum func f);
+void latex_symbol(struct symbol *s);
 #endif
