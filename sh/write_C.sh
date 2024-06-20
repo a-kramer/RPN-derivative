@@ -49,7 +49,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-.*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -60,7 +60,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^.*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
