@@ -69,6 +69,7 @@ RJacobian () {
 }
 
 write_in_R () {
+
 # write a gsl ode model file:
 cat<<EOF
 # require("deSolve")
@@ -87,6 +88,40 @@ RCharVector "names(f_)" "$VAR"
 echo "## for some weird reason deSolve wants this to be a list:"
 echo "\treturn(list(f_))"
 echo "}"
+
+nFlux=`egrep '[Rr]eaction(Flux)?_[0-9]*' "$EXP" | wc -l`
+if [ $((nFlux)) -gt 0 ]; then
+# total flux
+	printf "${MODEL}_netflux <- function(t, state, parameters){\n"
+	[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+	awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+	awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+	printf "	fFlux <- numeric(%i)\n" `egrep '^[ ]*[Rr]eaction(Flux)' "$EXP" | wc -l`
+	awk -F '	' 'BEGIN {j=1}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "netFlux[" j++ "] <- " $2; next;}; {print "\t" $1 " <- " $2};' "$EXP"
+	printf "return(netFlux)"
+	echo "}"
+	echo
+# forward flux
+	printf "${MODEL}_fflux <- function(t, state, parameters){\n"
+	[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+	awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+	awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+	printf "	fFlux <- numeric(%i)\n" `egrep '^[ ]*[Rr]eaction(Flux)' "$EXP" | wc -l`
+	awk -F '	' 'BEGIN {j=1};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	# " $2; gsub(/-.*$/," - 0",$2); print "\t" "fFlux[" j++ "] <- " $2; next;}; {print "\t" $1 " <- " $2};' "$EXP"
+	printf "return(fFlux)"
+	echo "}"
+	echo
+# backward flux
+	printf "${MODEL}_bflux <- function(t, state, parameters){\n"
+	[ -f "$CON" ] && awk '{print "\t" $1 " <- " $2 }' "$CON"
+	awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
+	awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
+	printf "	bFlux <- numeric(%i)\n" `egrep '^[ ]*[Rr]eaction(Flux)' "$EXP" | wc -l`
+	awk -F '	' 'BEGIN {j=1}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^.*-([^-]+)$/,"\\1","g",$2)} else {bf = "0"}; print "\t" "bFlux[" j++ "] <- " bf "# " $2; next;}; {print "\t" $1 " <- " $2};' "$EXP"
+	printf "return(bFlux)"
+	echo "}"
+	echo
+fi
 
 cat<<EOF
 # ode Jacobian df(t,y;p)/dy
