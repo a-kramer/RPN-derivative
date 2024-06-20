@@ -28,6 +28,45 @@ awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
+
+nFlux=`egrep '[Rr]eaction(Flux)?_[0-9]*' "$EXP" | wc -l`
+if [ $((nFlux)) -gt 0 ]; then
+# total flux
+	printf "int ${MODEL}_netflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+# forward flux
+	printf "int ${MODEL}_fwdflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-.*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+# backward flux
+	printf "int ${MODEL}_bwdflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^.*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+fi
+
+
 #
 # Jacobian of the ODE
 #
