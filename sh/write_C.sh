@@ -66,6 +66,19 @@ if [ $((nFlux)) -gt 0 ]; then
 	echo
 fi
 
+#
+# Event function
+#
+eventNames=`awk '{print $1}' "$EVT" | uniq`
+numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+cat<<EOF
+/* Scheduled Event function */
+int ${MODEL}_event(double t, double y_[], void *par, int Event, double dose)
+{
+	double *p_=par;
+	if (!y_ || !par || Event<0) return $((numEvents));
+
+EOF
 
 #
 # Jacobian of the ODE

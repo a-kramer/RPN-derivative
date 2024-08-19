@@ -89,7 +89,7 @@ EXP="Expressions.txt"
 VAR="StateVariables.txt"
 FUN="OutputFunctions.txt"
 ODE="ODE.txt"
-
+EVT="Event.txt"
 
 # a block that creates some output that is not code
 {
@@ -97,11 +97,12 @@ if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
 	INFO=`zipinfo -1 "$MODEL"`
 	echo "$INFO"
 	CON=`echo "$INFO" | egrep -i 'Constants?\.t[xs][tv]$'`
-	VAR=`echo "$INFO"  | egrep -i '(State)?Variables?\.t[xs][vt]$'`
-	PAR=`echo "$INFO"  | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
-	FUN=`echo "$INFO"  | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
-	EXP=`echo "$INFO"  | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
-	ODE=`echo "$INFO"  | egrep -i '.*ode\.t[xs][vt]$'`
+	VAR=`echo "$INFO" | egrep -i '(State)?Variables?\.t[xs][vt]$'`
+	PAR=`echo "$INFO" | egrep -i '(Model)?Parameters?\.t[xs][vt]$'`
+	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
+	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
+	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
+	EVT=`echo "$INFO" | egrep -i '(Scheduled)?Events?\.t[xs][vt]$'`
 	echo "unzip -u -q -d $TMP $MODEL *.t[xs][tv]"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && unzip -u -q -d "$TMP" "$MODEL" "*.t[xs][tv]"
 	MODEL=`basename -s .zip "${MODEL}"`
@@ -114,6 +115,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
 	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
 	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
+	EVT=`echo "$INFO" | egrep -i '(Scheduled)?Events?\.t[xs][vt]$'`
 	echo "tar xzf -C $TMP $MODEL"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
 	MODEL=`basename -s .tar.gz "${MODEL}"`
@@ -136,6 +138,7 @@ else
 	[ -z "$FUN" ] && FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
 	[ -z "$EXP" ] && EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
 	[ -z "$ODE" ] && ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
+	[ -z "$EVT" ] && EVT=`find . $OPTIONS -iregex "\(Scheduled\)?Events?\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
@@ -143,8 +146,9 @@ else
 	echo "EXP «$EXP»"
 	echo "FUN «$FUN»"
 	echo "ODE «$ODE»"
+	echo "EVT «$EVT»"
 	echo "copying to $TMP"
-	for f in "$CON" "$PAR" "$VAR" "$EXP" "$ODE" "$FUN" ; do
+	for f in "$CON" "$PAR" "$VAR" "$EXP" "$ODE" "$FUN" "$EVT" ; do
 		[ "$f" -a -f "$f" ] && cp "$f" "$TMP"
 	done
 	CON=`basename "$CON"`
@@ -153,6 +157,7 @@ else
 	EXP=`basename "$EXP"`
 	FUN=`basename "$FUN"`
 	ODE=`basename "$ODE"`
+	EVT=`basename "$EVT"`
 fi
 } 1>&2
 
@@ -163,7 +168,7 @@ fi
 [ "$VAR" ] && VAR="$TMP/$VAR"
 [ "$FUN" ] && FUN="$TMP/$FUN"
 [ "$ODE" ] && ODE="$TMP/$ODE"
-
+[ "$EVT" ] && EVT="$TMP/$EVT"
 . $dir/help.sh
 
 NV=`wc -l < "$VAR"`
