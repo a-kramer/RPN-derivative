@@ -71,14 +71,31 @@ fi
 #
 eventNames=`awk '{print $1}' "$EVT" | uniq`
 numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+varNames=`awk '{print $1}' "$VAR"`
+parNames=`awk '{print $1}' "$PAR"`
 cat<<EOF
-/* Scheduled Event function */
-int ${MODEL}_event(double t, double y_[], void *par, int Event, double dose)
+/* Scheduled Event function,
+   EventLabel specifies which of the possible transformations to apply,
+   dose can specify a scalar intensity for this transformation. */
+int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose)
 {
 	double *p_=par;
 	if (!y_ || !par || Event<0) return $((numEvents));
-
 EOF
+eventEnums=`echo "$eventNames" | tr ' ' ','`
+stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr ' ' ','`
+paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr ' ' ','`
+printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums"
+printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+printf "\tswitch(EventLabel){\n"
+for e in $eventNames ; do
+	awk -v e=$e -f ${dir}/event.awk "$EVT"
+done
+printf "\t return GSL_SUCCESS;\n}\n\n"
 
 #
 # Jacobian of the ODE
