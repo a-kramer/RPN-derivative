@@ -20,7 +20,7 @@ int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 	double *p_=par;
 	if (!y_ || !f_) return $((NV));
 EOF
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+[ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
@@ -71,6 +71,7 @@ fi
 #
 eventNames=`awk '{print $1}' "$EVT" | uniq`
 numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+if [ $numEvents -gt 0 ]; then
 varNames=`awk '{print $1}' "$VAR"`
 parNames=`awk '{print $1}' "$PAR"`
 cat<<EOF
@@ -82,12 +83,13 @@ int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose
 	double *p_=par;
 	if (!y_ || !par || Event<0) return $((numEvents));
 EOF
-eventEnums=`echo "$eventNames" | tr ' ' ','`
-stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr ' ' ','`
-paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr ' ' ','`
-printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums"
-printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums"
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+eventEnums=`echo "$eventNames" | tr '\n' ','`
+stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr '\n' ','`
+paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr '\n' ','`
+printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums numEvents"
+printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums numStateVar"
+printf "\tenum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
+[ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
@@ -95,8 +97,9 @@ printf "\tswitch(EventLabel){\n"
 for e in $eventNames ; do
 	awk -v e=$e -f ${dir}/event.awk "$EVT"
 done
-printf "\t return GSL_SUCCESS;\n}\n\n"
-
+printf "\t}\n"
+printf "\treturn GSL_SUCCESS;\n}\n\n"
+fi
 #
 # Jacobian of the ODE
 #

@@ -89,7 +89,7 @@ EXP="Expressions.txt"
 VAR="StateVariables.txt"
 FUN="OutputFunctions.txt"
 ODE="ODE.txt"
-EVT="Event.txt"
+EVT="Transformations.txt"
 
 # a block that creates some output that is not code
 {
@@ -102,7 +102,7 @@ if [ -f "$MODEL" -a "${BM#*.}" = "zip"  ]; then
 	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
 	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
 	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
-	EVT=`echo "$INFO" | egrep -i '(Scheduled)?Events?\.t[xs][vt]$'`
+	EVT=`echo "$INFO" | egrep -i 'Transformations?\.t[xs][vt]$'`
 	echo "unzip -u -q -d $TMP $MODEL *.t[xs][tv]"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && unzip -u -q -d "$TMP" "$MODEL" "*.t[xs][tv]"
 	MODEL=`basename -s .zip "${MODEL}"`
@@ -115,7 +115,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	FUN=`echo "$INFO" | egrep -i '(Output)?Functions?\.t[xs][vt]$'`
 	EXP=`echo "$INFO" | egrep -i 'Expressions?(Formulae?)?\.t[xs][vt]$'`
 	ODE=`echo "$INFO" | egrep -i '.*ode\.t[xs][vt]$'`
-	EVT=`echo "$INFO" | egrep -i '(Scheduled)?Events?\.t[xs][vt]$'`
+	EVT=`echo "$INFO" | egrep -i 'Transformations?\.t[xs][vt]$'`
 	echo "tar xzf -C $TMP $MODEL"
 	[ "$VAR" -a "$PAR" -a "$ODE" ] && tar xzf "$MODEL" -C "$TMP"
 	MODEL=`basename -s .tar.gz "${MODEL}"`
@@ -127,6 +127,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
 	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*DefaultInitialCondition="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$VAR"
 	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
 	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
+	sed -r -n -e 's|^[ ]*<Function.*Description="Transformation".*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$EVT"
 	# we take the model's name from the file's content
 	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
 	echo "Name of the Model according to vfgen file: $MODEL"
@@ -138,7 +139,7 @@ else
 	[ -z "$FUN" ] && FUN=`find . $OPTIONS -iregex ".*\(Output\)?Functions?\.t[xs][vt]$" -print -quit`
 	[ -z "$EXP" ] && EXP=`find . $OPTIONS -iregex ".*Expressions?\(Formulae?\)?\.t[xs][vt]$" -print -quit`
 	[ -z "$ODE" ] && ODE=`find . $OPTIONS -iregex ".*ode\.t[xs][vt]$" -print -quit`
-	[ -z "$EVT" ] && EVT=`find . $OPTIONS -iregex "\(Scheduled\)?Events?\.t[xs][vt]$" -print -quit`
+	[ -z "$EVT" ] && EVT=`find . $OPTIONS -iregex ".*Transformations?\.t[xs][vt]$" -print -quit`
 	echo "[$0] Using these files:"
 	echo "CON «$CON»"
 	echo "PAR «$PAR»"
