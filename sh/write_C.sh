@@ -20,7 +20,7 @@ int ${MODEL}_vf(double t, const double y_[], double f_[], void *par)
 	double *p_=par;
 	if (!y_ || !f_) return $((NV));
 EOF
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+[ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
@@ -28,6 +28,78 @@ awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
+
+nFlux=`egrep '[Rr]eaction(Flux)?_[0-9]*' "$EXP" | wc -l`
+if [ $((nFlux)) -gt 0 ]; then
+# total flux
+	printf "int ${MODEL}_netflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+# forward flux
+	printf "int ${MODEL}_fwdflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+# backward flux
+	printf "int ${MODEL}_bwdflux(double t, double y_[], double *flux, void *par){\n"
+	printf "\tdouble *p_=par;\n"
+	printf "\tif (!y_ || !flux) return %i;\n" $((nFlux))
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
+	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
+	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	printf "\treturn GSL_SUCCESS;\n"
+	echo "}"
+	echo
+fi
+
+#
+# Event function
+#
+eventNames=`awk '{print $1}' "$EVT" | uniq`
+numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+if [ $numEvents -gt 0 ]; then
+varNames=`awk '{print $1}' "$VAR"`
+parNames=`awk '{print $1}' "$PAR"`
+cat<<EOF
+/* Scheduled Event function,
+   EventLabel specifies which of the possible transformations to apply,
+   dose can specify a scalar intensity for this transformation. */
+int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose)
+{
+	double *p_=par;
+	if (!y_ || !par || Event<0) return $((numEvents));
+EOF
+eventEnums=`echo "$eventNames" | tr '\n' ','`
+stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr '\n' ','`
+paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr '\n' ','`
+printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums numEvents"
+printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums numStateVar"
+printf "\tenum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
+[ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+printf "\tswitch(EventLabel){\n"
+for e in $eventNames ; do
+	awk -v e=$e -f ${dir}/event.awk "$EVT"
+done
+printf "\t}\n"
+printf "\treturn GSL_SUCCESS;\n}\n\n"
+fi
 #
 # Jacobian of the ODE
 #

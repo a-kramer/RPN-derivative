@@ -8,6 +8,7 @@ if [ -f "$VAR" -a -f "$PAR" -a -f "$ODE" ]; then
 	echo "EXP «$EXP»"
 	echo "FUN «$FUN»"
 	echo "ODE «$ODE»"
+	echo "EVT «$EVT»"
 else
 	echo "Usage: $0 [ModelName|ModelName.zip|ModelName.tar.gz] [N] [TMP]"
 	echo "      or"
