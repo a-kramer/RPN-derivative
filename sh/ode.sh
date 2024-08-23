@@ -162,14 +162,21 @@ else
 fi
 } 1>&2
 
+
+
 # now all files should exist in the temp directory, so we set new paths:
+
 [ "$CON" ] && CON="$TMP/$CON"
 [ "$PAR" ] && PAR="$TMP/$PAR"
-[ "$EXP" ] && EXP="$TMP/$EXP"
+[ "$EXP" ] && CXP="$TMP/C$EXP" && EXP="$TMP/$EXP"
 [ "$VAR" ] && VAR="$TMP/$VAR"
 [ "$FUN" ] && FUN="$TMP/$FUN"
 [ "$ODE" ] && ODE="$TMP/$ODE"
 [ "$EVT" ] && EVT="$TMP/$EVT"
+
+
+[ "$EXP" ] && sed -E -f "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
+
 . $dir/help.sh
 
 NV=`wc -l < "$VAR"`

@@ -23,13 +23,13 @@ EOF
 [ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 awk -F '	' '{print "\tf_[" NR-1 "] = " $0 ";"}' "$ODE"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
 
-nFlux=`egrep '[Rr]eaction(Flux)?_[0-9]*' "$EXP" | wc -l`
+nFlux=`egrep '[Rr]eaction(Flux)?_[0-9]*' "$CXP" | wc -l`
 if [ $((nFlux)) -gt 0 ]; then
 # total flux
 	printf "int ${MODEL}_netflux(double t, double y_[], double *flux, void *par){\n"
@@ -38,7 +38,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -49,7 +49,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	awk -F '	' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -60,7 +60,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$EXP"
+	awk -F '	' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -92,7 +92,7 @@ printf "\tenum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
 [ -f "$CON" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 printf "\tswitch(EventLabel){\n"
 for e in $eventNames ; do
 	awk -v e=$e -f ${dir}/event.awk "$EVT"
@@ -113,7 +113,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
 	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jac_Column_${j}.txt
@@ -134,7 +134,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for j in `seq 1 $NP`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
 	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jacp_Column_${j}.txt
@@ -155,7 +155,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 [ -f "$FUN" ] && awk -F '	' '{print "\tfunc_[" (NR-1) "] = " $2 "; /* " $1 " */"}' "$FUN"
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -173,7 +173,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (dF/dy_$((j-1))) */"
 	awk -v n=$((NV)) -v j=$((j)) '{print "\tfuncJac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJac_Column_${j}.txt"
@@ -195,7 +195,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for j in `seq 1 $NV`; do
 	echo "/* column $j (dF/dp_$((j-1))) */"
 	awk -v n=$((NP)) -v j=$((j)) '{print "\tfuncJacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJacp_Column_${j}.txt"
@@ -250,7 +250,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for i in `seq $NP`; do
 	for j in `seq $((i)) $NP` ; do
 		echo "/* subset d^2 F(t,y;p)/dp[$((i-1))]dp[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
@@ -273,7 +273,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for i in `seq $NV`; do
 	for j in `seq $((i)) $NV` ; do
 		echo "/* subset d^2 F(t,y;p)/dy[$((i-1))]dy[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
@@ -296,7 +296,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for i in `seq $NV`; do
 	for j in `seq $((i)) $NV` ; do
 		echo "/* subset d^2 f(t,y;p)/dy[$((i-1))]dy[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
@@ -319,7 +319,7 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '	' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '	' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$EXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$EXP"
+[ -f "$CXP" ] && awk -F '	' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
 for i in `seq $NP`; do
 	for j in `seq $((i)) $NP` ; do
 		echo "/* subset d^2 f(t,y;p)/dp[$((i-1))]dp[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
