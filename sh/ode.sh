@@ -175,7 +175,8 @@ fi
 [ "$EVT" ] && EVT="$TMP/$EVT"
 
 
-[ "$EXP" ] && sed -E -f "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
+[ "$EXP" ] && [ "GNU_WORD_BOUNDARIES" ] && sed -E -f "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
+[ "$EXP" ] && [ "BSD_WORD_BOUNDARIES" ] && sed -E -f "$dir/maxima-to-C-bsd.sed" "$EXP" > "$CXP"
 
 . $dir/help.sh
 
