@@ -70,7 +70,7 @@ fi
 # Event function
 #
 numEvents=0
-[ "$EVT" ] && numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+[ -f "$EVT" ] && numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
 if [ $numEvents -gt 0 ]; then
 	eventNames=`awk '{print $1}' "$EVT" | uniq`
 	varNames=`awk '{print $1}' "$VAR"`
@@ -82,7 +82,7 @@ cat<<EOF
 int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose)
 {
 	double *p_=par;
-	if (!y_ || !par || Event<0) return $((numEvents));
+	if (!y_ || !par || EventLabel<0) return $((numEvents));
 EOF
 if [ "$GNU_WORD_BOUNDARIES" ]; then
 	eventEnums=`echo "$eventNames" | tr '\n' ','`
