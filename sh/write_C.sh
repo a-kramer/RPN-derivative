@@ -69,11 +69,12 @@ fi
 #
 # Event function
 #
-eventNames=`awk '{print $1}' "$EVT" | uniq`
-numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
+numEvents=0
+[ -f "$EVT" ] && numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
 if [ $numEvents -gt 0 ]; then
-varNames=`awk '{print $1}' "$VAR"`
-parNames=`awk '{print $1}' "$PAR"`
+	eventNames=`awk '{print $1}' "$EVT" | uniq`
+	varNames=`awk '{print $1}' "$VAR"`
+	parNames=`awk '{print $1}' "$PAR"`
 cat<<EOF
 /* Scheduled Event function,
    EventLabel specifies which of the possible transformations to apply,
@@ -81,11 +82,17 @@ cat<<EOF
 int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose)
 {
 	double *p_=par;
-	if (!y_ || !par || Event<0) return $((numEvents));
+	if (!y_ || !par || EventLabel<0) return $((numEvents));
 EOF
-eventEnums=`echo "$eventNames" | tr '\n' ','`
-stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr '\n' ','`
-paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr '\n' ','`
+if [ "$GNU_WORD_BOUNDARIES" ]; then
+	eventEnums=`echo "$eventNames" | tr '\n' ','`
+	stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr '\n' ','`
+	paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr '\n' ','`
+else
+	eventEnums=`echo "$eventNames" | tr '\n' ','`
+	stateEnums=`echo "$varNames" | perl -pe 's/\b/var_/g' | tr '\n' ','`
+	paramEnums=`echo "$parNames" | perl -pe 's/\b/par_/g' | tr '\n' ','`
+fi
 printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums numEvents"
 printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums numStateVar"
 printf "\tenum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
