@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## this script uses perl instead of sed now in a few places where word boundaries are needed.
+## But, it's perl in noob mode where we only use the -p option to emulate sed.
+
 MODEL="DemoModel"
 N=10
 PL="C"
@@ -21,9 +24,9 @@ fi
 # ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
 
 # find out how the current system's sed matches word boundaries:
-GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
-BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
-# the above strings will be empty if an error occurred
+#GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
+#BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
+# the above strings will be empty if an error occurred. This is not needed anymore, as we use perl and \b
 
 # check whether /dev/shm exists
 [ -d /dev/shm ] && TMP="/dev/shm/ode_gen" || TMP="/tmp/ode_gen"
@@ -121,6 +124,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "tar.gz" ]; then
 	MODEL=`basename -s .tar.gz "${MODEL}"`
 elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
 	echo "Using this vector field file: $MODEL"
+	## here sed is ok, as we don't need word boundaries
 	sed -r -n -e 's|^[ ]*<Constant.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$CON"
 	sed -r -n -e 's|^[ ]*<Parameter.*Name="([^"]+)".*Value="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$PAR"
 	sed -r -n -e 's|^[ ]*<Expression.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$EXP"
@@ -162,8 +166,6 @@ else
 fi
 } 1>&2
 
-
-
 # now all files should exist in the temp directory, so we set new paths:
 
 [ "$CON" ] && CON="$TMP/$CON"
@@ -174,16 +176,19 @@ fi
 [ "$ODE" ] && ODE="$TMP/$ODE"
 [ "$EVT" ] && EVT="$TMP/$EVT"
 
-
-[ "$EXP" ] && [ "$GNU_WORD_BOUNDARIES" ] && sed -E -f "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
-[ "$EXP" ] && [ "$BSD_WORD_BOUNDARIES" ] && sed -E -f "$dir/maxima-to-C-bsd.sed" "$EXP" > "$CXP"
+## Here, we must convert human ascii math to C expressions.
+## But, maxima is very close to human readable ascii math in one-line-mode.
+## So, we re-use the maxima-to-C converter as a human-to-C converter
+[ "$EXP" ] && perl -p "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
+## We don't need this for R, as R will already understand ascii math
+## as it is in most cases.
 
 . $dir/help.sh
 
 NV=`wc -l < "$VAR"`
 NP=`wc -l < "$PAR"`
-[ -f "$EXP" ] && NE=`wc -l < "$EXP"` || NE=0
-[ -f "$FUN" ] && NF=`wc -l < "$FUN"` || NF=0
+[ -f "$EXP" ] && NE=$((`wc -l < "$EXP"`)) || NE=0
+[ -f "$FUN" ] && NF=$((`wc -l < "$FUN"`)) || NF=0
 
 {
 echo "$NV state variables, $NP parameters, $NE expressions, $NF functions"
@@ -225,10 +230,10 @@ Hessian () {
 	for i in `seq $NVAR` ; do
 		vi=`var $i "$2"`
 		firstDerivative="$TMP/${3}_$((i))"
-		Derivative $vi < "$1" > "${firstDerivative}.txt"
+		Derivative $vi < "$1" > "${firstDerivative}.txt" 2> "$TMP/error.log"
 		for j in `seq $i $NVAR` ; do
 			vj=`var $j "$2"`
-			Derivative $vj < "$firstDerivative.txt" > "${firstDerivative}_$((j)).txt"
+			Derivative $vj < "$firstDerivative.txt" > "${firstDerivative}_$((j)).txt" 2> "$TMP/error.log"
 			[ $((j)) -gt $((i)) ] && ln -s "$TMP/${3}_$((i))_$((j)).txt" "$TMP/${3}_$((j))_$((i)).txt"
 		done
 	done
