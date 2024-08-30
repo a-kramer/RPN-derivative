@@ -17,12 +17,13 @@ if [ -f "$0" ]; then
 elif [ "`alias $0`" ]; then
 	src=`alias "$0" | awk -F= '{print $2}' | tr -d "'"`
 else
-	src=`readlink -f "$0"`
+	path=`which $0`
+	src=`readlink -f "$path"`
 fi
 [ "$src" ] && dir=`dirname $src` || dir="."
 } 2>/dev/null
 # ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
-
+printf "Location of all scripts: «$dir»" 1>&2
 # find out how the current system's sed matches word boundaries:
 #GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
 #BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
