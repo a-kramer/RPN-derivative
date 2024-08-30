@@ -296,3 +296,17 @@ sumB	B+AB+ABC
 sumC	C+AC+ABC
 ```
 
+## SED and PERL
+
+Note that this folder contains many `sed` scripts. Hwever, posix `sed`
+cannot match word boundaries. BSD and MACOS use `[[:<:]]` and
+`[[:>:]]`, but GNU systems use `\<`, `\>`, and `\b` (for which BSD sed
+has no equivalent).
+
+It would be nice if MACOS had gsed (GNU sed) reliably, so that we
+could just replace all calls to sed with gsed or gnu-sed. But, we
+cannot assume this.
+
+Instead, we opt to use `perl -p` as a replacement for `sed -[Er]`, as
+perl is part of coreutils and has `\b` on all unix systems that we
+have tested on so far.

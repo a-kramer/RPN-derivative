@@ -84,15 +84,9 @@ int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose
 	double *p_=par;
 	if (!y_ || !par || EventLabel<0) return $((numEvents));
 EOF
-if [ "$GNU_WORD_BOUNDARIES" ]; then
 	eventEnums=`echo "$eventNames" | tr '\n' ','`
-	stateEnums=`echo "$varNames" | sed 's/\</var_/g' | tr '\n' ','`
-	paramEnums=`echo "$parNames" | sed 's/\</par_/g' | tr '\n' ','`
-else
-	eventEnums=`echo "$eventNames" | tr '\n' ','`
-	stateEnums=`echo "$varNames" | perl -pe 's/\b/var_/g' | tr '\n' ','`
-	paramEnums=`echo "$parNames" | perl -pe 's/\b/par_/g' | tr '\n' ','`
-fi
+	stateEnums=`echo "$varNames" | perl -pe 's/\b(\w)/var_\1/g' | tr '\n' ','`
+	paramEnums=`echo "$parNames" | perl -pe 's/\b(\w)/par_\1/g' | tr '\n' ','`
 printf "\tenum eventLabel { %s }; /* event name indexes */\n" "$eventEnums numEvents"
 printf "\tenum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums numStateVar"
 printf "\tenum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
