@@ -180,14 +180,14 @@ fi
 ## Here, we must convert human ascii math to C expressions.
 ## But, maxima is very close to human readable ascii math in one-line-mode.
 ## So, we re-use the maxima-to-C converter as a human-to-C converter
-[ "$EXP" ] && perl -p "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
+[ -f "$EXP" ] && perl -p "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
 ## We don't need this for R, as R will already understand ascii math
 ## as it is in most cases.
 
 . $dir/help.sh
 
-NV=`wc -l < "$VAR"`
-NP=`wc -l < "$PAR"`
+NV=$(( `wc -l < "$VAR"` ))
+NP=$(( `wc -l < "$PAR"` ))
 [ -f "$EXP" ] && NE=$((`wc -l < "$EXP"`)) || NE=0
 [ -f "$FUN" ] && NF=$((`wc -l < "$FUN"`)) || NF=0
 
@@ -202,9 +202,9 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 # make a copy of ODE.txt and FUN, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
 #substitute EXPRESSION_FILE MATH_FILE OUTPUT_FILE
-substitute "$EXP" "$ODE" "$EXODE"
+[ -f "$EXP" ] && substitute "$EXP" "$ODE" "$EXODE" || EXODE="$ODE"
 EXFUN="${TMP}/explicit_func.txt"
-substitute "$EXP" "$FUN" "$EXFUN"
+[ -f "$EXP" ] && substitute "$EXP" "$FUN" "$EXFUN" || EXFUN="$FUN"
 
 # look up name of varianble i
 # var i file

@@ -171,3 +171,13 @@ EOF
  test_float_eq "$F | x=2" "$EXACT" "$FIN_DIFF"
 fi
 
+## make a model using sh/ode.sh
+model=CaSpike
+LIBS=`pkg-config --libs gsl`
+sh/ode.sh -C examples/${model}.tar.gz > examples/${model}_gvf.c && gcc -shared -fPIC -o ${model}.so examples/${model}_gvf.c $LIBS
+ec=$?
+if [ $ec -eq 0 ]; then
+	echo "making example model «$model» was successful"
+else
+	echo "making $model has failed with error code $ec"
+fi
