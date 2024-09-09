@@ -12,25 +12,33 @@ $$
 \end{align}
 $$
 
-where the *output function* $F$ models the *measurement* process and
-corresponds to measured data $z$. This is only relevant if the ODE system corresponds to some
-real system ($F$ is optional).
+where the *output function* $F$ models the *measurement* process at
+least partially and corresponds to measured data $z$ in some way. This
+is only relevant if the ODE system corresponds to some real system
+($F$ is optional).
 
-The script [ode.sh](./ode.sh) generates these right-hand-side
-functions $f$ in C or R (perhaps more languages later). Additionally
+In some cases, $F$ and $z$ cannot be compared directly due to a complex
+normalization. In that case the value of $F$ and $z$ have to be passed
+into a likelihood function or objective function (cost function) which
+performs the needed normalization.
+
+The script [ode.sh](./ode.sh) generates this right-hand-side
+function $f$, in C or R (perhaps more languages later). Additionally
 the script writes an analytical *Jacobian* $df/dy$, *parameter
 Jacobian* $df/dp$, and an output function that models *observable
-quanities*.
+quanities* together with its partial derivatives.
 
-**Note on platforms** we try to make this script run with GNU tools as well as BSD tools (i.e.: options to *find*, *awk*, and *sed*).
+**Note on platforms** we try to make this script run with GNU
+coreutils, busybox, and BSD implementations of the coreutils (i.e.:
+options to *find*, *awk*, and *sed*/*perl*).
 
 **Note on C functions:** In addition to the requirements of the
 GNU scientific library, the functions return the length of the return buffer they
-expect when called with NULL pointers instead of allocated output
+expect when called with `NULL` pointers instead of allocated output
 buffers. For the demo model in [../examples/](../examples), this is:
 
 ```c
-/* the DemoModel has 6 state variables: A,B,C,AB,AC, and ABC */
+/* the DemoModel has 6 state variables: A, B, C, AB, AC, and ABC */
 double t=12;
 int status=DemoModel_vf(t,NULL,NULL,NULL); /* returns 6 */
 ```
@@ -86,7 +94,6 @@ EXAMPLE
 	mkdir .tmp
 	sh/ode.sh -t ./.tmp --inspect -R myModel.vf > myModel.R
 	ls .tmp
-p
 ```
 
 ## Backends
@@ -103,7 +110,8 @@ Instead of the derivative function supplied here, it is possible to use `maxima`
 
 All backends require some output molding to translate it to C source
 code (or R, etc.). Each language has its idiosyncrasies (C does not
-see `^` as power, while R and maxima do). So, the output must be checked for errors andverified.
+see `^` as power, while R and maxima do). So, the output must be
+checked for errors andverified.
 
 ## Output
 
@@ -295,6 +303,50 @@ sumA	A+AB+AC+ABC
 sumB	B+AB+ABC
 sumC	C+AC+ABC
 ```
+
+### Transformations
+
+This file describes transformations the system should be capable of
+during scheduled events.
+
+This is a convenience function. When the solver hits an event time
+$t_e$, the solver is stopped, and the state variables and parameters
+are transformed according to this function. Then the solver is reset
+and integration continues from this new state. This loop has to be
+implemented in the code that uses these functions.
+
+The file has the structure:
+
+```txt
+eventName	var	A	A+B
+eventName	var	B	0.0
+```
+
+All lines with the same event label (column 1) form a group and happen
+together.
+
+The fist column names the event, this is used as to form a C `enum`
+and a `switch` determines which group of transformations apply. The
+second column can be either `var` or `par` to select whether a state
+variable or a parameter is to be transformed (this could be determined
+by name, but these var/par labels can be pre-fetched and this is
+overall faster). The third column names the variable to transform. The
+last column is a mathematical expression, the value is assigned to the
+previously named variable.
+
+The file is tab separated. The generated event function has the interface:
+
+```C
+int modelName_event(double t, double y[], void *par, int eventLabel, double dose)
+```
+
+where `eventLabel` is an offset, `0` selects the first event name that
+appears in `Transformations.txt`, `1` skips over the first named event
+and applies the second, if there is one.
+
+Each value expression (column 4) can also use the value of `dose`,
+which is a scalar intensity of the transformative event. This is
+optional.
 
 ## SED and PERL
 
