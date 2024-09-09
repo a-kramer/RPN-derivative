@@ -13,7 +13,7 @@ substitute () {
 		for j in `seq $NE -1 1`; do
 			ExpressionName=`awk -F '	' -v j=$((j)) 'NR==j {print $1}' "$1"`
 			ExpressionFormula=`awk -F '	' -v j=$((j)) 'NR==j {print $2}' "$1"`
-			perl -i.rm -p -e "s|\b${ExpressionName}\b|(${ExpressionFormula})|g" "$3"
+			perl -i.rm -p -e "s|\b${ExpressionName}\b|(${ExpressionFormula})|g;" -e 's|^.*[<>=]+.*$|0.0|g;' "$3"
 		done
 	fi
 	[ "$dir" ] && perl -i.rm -p "${dir}/math.sed" "$3"
