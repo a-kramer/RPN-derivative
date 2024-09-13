@@ -12,17 +12,20 @@ HESS=""
 
 # find the location of this file, so that we can source neighboring files
 {
-if [ -f "$0" ]; then
-	src="$0"
-elif [ "`alias $0`" ]; then
-	src=`alias "$0" | awk -F= '{print $2}' | tr -d "'"`
-else
-	path=`which $0`
-	src=`readlink -f "$path"`
+if [ "`alias \"$0\"`" ]; then      # alias to an absolute or relative path
+	path=`alias "$0" | awk -F= \"{print $2}\" | tr -d "\""`
+elif [ -f "$0" ]; then             # relative or absolute path
+	path="$0"
+else                               # ln link
+	path="`which \"$0\"`"
 fi
-[ "$src" ] && dir=`dirname $src` || dir="."
 } 2>/dev/null
 # ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
+
+src="`readlink -f \"$path\"`"
+echo "full path: $src" 1>&2
+[ -f "$src" ] && dir="`dirname \"$src\"`" || exit -1
+
 printf "Location of all scripts: «$dir»" 1>&2
 # find out how the current system's sed matches word boundaries:
 #GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
