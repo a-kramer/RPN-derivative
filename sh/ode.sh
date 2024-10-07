@@ -11,17 +11,8 @@ backend="_rpn" # derivative (this package)"
 HESS=""
 
 # find the location of this file, so that we can source neighboring files
-{
-if [ -f "$0" ]; then
-	src="$0"
-elif [ "`alias $0`" ]; then
-	src=`alias "$0" | awk -F= '{print $2}' | tr -d "'"`
-else
-	src=`readlink -f "$0"`
-fi
-[ "$src" ] && dir=`dirname $src` || dir="."
-} 2>/dev/null
-# ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
+src="`readlink -f $0`"
+[ -f "$src" ] && dir=`dirname "$src"` || dir="."
 
 # find out how the current system's sed matches word boundaries:
 #GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
