@@ -10,17 +10,11 @@ CLEAN="yes"
 backend="_rpn" # derivative (this package)"
 HESS=""
 
-# find the location of this file, so that we can source neighboring files
-{
-if [ "`alias \"$0\"`" ]; then      # alias to an absolute or relative path
-	path=`alias "$0" | awk -F= \"{print $2}\" | tr -d "\""`
-elif [ -f "$0" ]; then             # relative or absolute path
+if [ -f "$0" ]; then               # relative or absolute path
 	path="$0"
 else                               # ln link
 	path="`which \"$0\"`"
 fi
-} 2>/dev/null
-# ^^^^^^^^^^^ means redirect stderr to null, because alias prints an error message on failure
 
 src="`readlink -f \"$path\"`"
 echo "full path: $src" 1>&2
@@ -249,8 +243,8 @@ Jacobian "$EXODE" "$VAR" "Jac_Column"
 Jacobian "$EXODE" "$PAR" "Jacp_Column"
 [ "$HESS" ] && Hessian "$EXODE" "$PAR" "parHessian"
 [ "$HESS" ] && Hessian "$EXODE" "$VAR" "Hessian"
-Jacobian "$EXFUN" "$VAR" "funcJac_Column"
-Jacobian "$EXFUN" "$PAR" "funcJacp_Column"
+[ -f "$EXFUN" ] && Jacobian "$EXFUN" "$VAR" "funcJac_Column"
+[ -f "$EXFUN" ] && Jacobian "$EXFUN" "$PAR" "funcJacp_Column"
 [ "$HESS" ] && Hessian "$EXFUN" "$PAR" "funcParHessian"
 [ "$HESS" ] && Hessian "$EXFUN" "$VAR" "funcHessian"
 
