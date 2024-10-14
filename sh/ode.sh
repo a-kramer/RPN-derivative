@@ -130,6 +130,7 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
 	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
 	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
 	sed -r -n -e 's|^[ ]*<Function.*Description="Transformation".*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$EVT"
+	tr '="<>' ' ' < "$MODEL" | perl -p -e 's|/[ ]*$||g' | awk 'BEGIN {OFS="\t"}; $1 ~ /Transformation/ {Name=$3}; $1 ~ /Assign/ {print Name, $5, $3, $7}' > "$TMP/$EVT"
 	# we take the model's name from the file's content
 	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
 	echo "Name of the Model according to vfgen file: $MODEL"
