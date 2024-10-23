@@ -3,6 +3,8 @@
 ## this script uses perl instead of sed now in a few places where word boundaries are needed.
 ## But, it's perl in noob mode where we only use the -p option to emulate sed.
 
+echo "$@" 1>&2
+
 MODEL="DemoModel"
 N=10
 PL="C"
@@ -17,10 +19,10 @@ else                               # ln link
 fi
 
 src="`readlink -f \"$path\"`"
-echo "full path: $src" 1>&2
+#echo "full path: $src" 1>&2
 [ -f "$src" ] && dir="`dirname \"$src\"`" || exit -1
 
-printf "Location of all scripts: «$dir»" 1>&2
+#printf "Location of all scripts: «$dir»" 1>&2
 # find out how the current system's sed matches word boundaries:
 #GNU_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/\<cat\>/CAT/' 2>/dev/null`
 #BSD_WORD_BOUNDARIES=`echo 'cat' | sed -E 's/[[:<:]]cat[[:>:]]\>/CAT/' 2>/dev/null`
@@ -128,12 +130,20 @@ elif [ -f "$MODEL" -a "${BM#*.}" = "vf" ]; then
 	sed -r -n -e 's|^[ ]*<Expression.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$EXP"
 	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*DefaultInitialCondition="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$VAR"
 	sed -r -n -e 's|^[ ]*<Function.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$FUN"
-	sed -r -n -e 's|^[ ]*<StateVariable.*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$ODE"
+	sed -r -n -e 's|^[ ]*<StateVariable.*Name="([^"]+)".*Formula="([^"]+)".*$|\1\t\2|p' "$MODEL" > "$TMP/$ODE"
 	sed -r -n -e 's|^[ ]*<Function.*Description="Transformation".*Formula="([^"]+)".*$|\1|p' "$MODEL" > "$TMP/$EVT"
 	tr '="<>' ' ' < "$MODEL" | perl -p -e 's|/[ ]*$||g' | awk 'BEGIN {OFS="\t"}; $1 ~ /Transformation/ {Name=$3}; $1 ~ /Assign/ {print Name, $5, $3, $7}' > "$TMP/$EVT"
 	# we take the model's name from the file's content
 	MODEL=`sed -n -r -e 's|^[ ]*<VectorField.*Name="([^"]+)".*$|\1|p' $MODEL`
 	echo "Name of the Model according to vfgen file: $MODEL"
+elif [ -f "$MODEL" -a "${BM#*.}" = "ode" ]; then
+	egrep '^number' "$MODEL" | tr '=' '\t' | sed 's/^number //' > "$TMP/$CON"
+	egrep '^par' "$MODEL" | tr '=' '\t' | sed 's/^par //' > "$TMP/$PAR"
+	egrep '^init' "$MODEL" | tr '=' '\t' | sed 's/^init //' > "$TMP/$VAR"
+	egrep '^!' "$MODEL" | tr '=' '\t' | tr -d '!' > "$TMP/$EXP"
+	egrep "'" "$MODEL" | sed "s/'=/\t/" > "$TMP/$ODE"
+	egrep '^aux' "$MODEL" | tr '=' '\t' | sed 's/^aux[ ]*//' > "$TMP/$FUN"
+	MODEL=`basename -s .ode "${MODEL}"`
 else
 	OPTTIONS="-type f"
 	[ -z "$CON" ] && CON=`find . $OPTIONS -iregex ".*Constants?\.t[xs][tv]$" -print -quit`
@@ -169,16 +179,12 @@ fi
 
 [ "$CON" ] && CON="$TMP/$CON"
 [ "$PAR" ] && PAR="$TMP/$PAR"
-[ "$EXP" ] && CXP="$TMP/C$EXP" && EXP="$TMP/$EXP"
+[ "$EXP" ] && EXP="$TMP/$EXP"
 [ "$VAR" ] && VAR="$TMP/$VAR"
 [ "$FUN" ] && FUN="$TMP/$FUN"
 [ "$ODE" ] && ODE="$TMP/$ODE"
 [ "$EVT" ] && EVT="$TMP/$EVT"
 
-## Here, we must convert human ascii math to C expressions.
-## But, maxima is very close to human readable ascii math in one-line-mode.
-## So, we re-use the maxima-to-C converter as a human-to-C converter
-[ -f "$EXP" ] && perl -p "$dir/maxima-to-C.sed" "$EXP" > "$CXP"
 ## We don't need this for R, as R will already understand ascii math
 ## as it is in most cases.
 
@@ -200,16 +206,18 @@ echo "p-jacobian df[i]/dp[j] has size $((NV*NP)) ($NV×$NP)"
 # make a copy of ODE.txt and FUN, but with all expressions substituted
 EXODE="${TMP}/explicit_ode.txt"
 #substitute EXPRESSION_FILE MATH_FILE OUTPUT_FILE
-[ -f "$EXP" ] && substitute "$EXP" "$ODE" "$EXODE" || EXODE="$ODE"
+
+
+[ -f "$EXP" ] && substitute "$EXP" "$ODE" > "$EXODE" || cp "$ODE" "$EXODE"
 EXFUN="${TMP}/explicit_func.txt"
-[ -f "$EXP" ] && substitute "$EXP" "$FUN" "$EXFUN" || EXFUN="$FUN"
+[ -f "$EXP" ] && substitute "$EXP" "$FUN" > "$EXFUN" || cp "$FUN" "$EXFUN"
 
 # look up name of varianble i
 # var i file
 var () {
 	i="$1"
 	file="$2"
-	awk -F '	' -v i=$((i)) 'NR==i {print $1}' "$file"
+	awk -F '[\t=]' -v i=$((i)) 'NR==i {print $1}' "$file"
 }
 
 # source the backend specific `Derivative()` function
@@ -242,12 +250,20 @@ Hessian () {
 
 Jacobian "$EXODE" "$VAR" "Jac_Column"
 Jacobian "$EXODE" "$PAR" "Jacp_Column"
-[ "$HESS" ] && Hessian "$EXODE" "$PAR" "parHessian"
-[ "$HESS" ] && Hessian "$EXODE" "$VAR" "Hessian"
-[ -f "$EXFUN" ] && Jacobian "$EXFUN" "$VAR" "funcJac_Column"
-[ -f "$EXFUN" ] && Jacobian "$EXFUN" "$PAR" "funcJacp_Column"
-[ "$HESS" ] && Hessian "$EXFUN" "$PAR" "funcParHessian"
-[ "$HESS" ] && Hessian "$EXFUN" "$VAR" "funcHessian"
+
+# Hessians?
+if [ "$HESS" ]; then 
+	Hessian "$EXODE" "$PAR" "parHessian"
+	Hessian "$EXODE" "$VAR" "Hessian"
+	Hessian "$EXFUN" "$PAR" "funcParHessian"	
+	Hessian "$EXFUN" "$VAR" "funcHessian"
+fi
+
+# Output Function Jacobians
+if [ -f "$EXFUN" ]; then
+    Jacobian "$EXFUN" "$VAR" "funcJac_Column"
+    Jacobian "$EXFUN" "$PAR" "funcJacp_Column"
+fi
 
 
 # In the next two lines, we source (`.`) the sh-code for writing output
