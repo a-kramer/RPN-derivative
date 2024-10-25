@@ -3,10 +3,12 @@ write_in_C () {
 cat<<EOF
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv2.h>
 #include <gsl/gsl_math.h>
 
+/* string.h for memset() */
 EOF
 
 
@@ -17,7 +19,9 @@ printf "enum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums
 paramEnums="`cut -f1 "$PAR" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ','`"
 printf "enum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
 
-if [ -f "EVT" ]; then
+numEvents=0
+if [ -f "$EVT" ]; then
+    numEvents=$((`cut -f1 "$EVT" | uniq | wc -w`))
     eventEnums="`cut -f1 "$EVT" | uniq | tr '\n' ','`"
     printf "enum eventLabel { %s }; /* event name indexes */\n" "$eventEnums numEvents"
 fi
@@ -44,14 +48,16 @@ EOF
 [ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$CXP" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
+if [ -f "$EXP" ]; then
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+fi
 perl -p "${dir:-.}/maxima-to-C.sed" "$ODE" | awk -F '\t' '{print "\tf_[_" $1 "] = " $2 "; /*", $1, "*/"}'
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
 
 nFlux=0
-[ -f "$CXP" ] && nFlux=`egrep -c '[Rr]eaction(Flux)?_[0-9]*' "$CXP"`
+[ -f "$EXP" ] && nFlux=`egrep -c '[Rr]eaction(Flux)?_[0-9]*' "$EXP"`
 if [ $((nFlux)) -gt 0 ]; then
 # total flux
 	printf "int ${MODEL}_netflux(double t, double y_[], double *flux, void *par){\n"
@@ -60,7 +66,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' 
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -71,7 +77,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '\t' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};'
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -82,7 +88,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};' "$CXP"
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};'
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -91,10 +97,8 @@ fi
 #
 # Event function
 #
-numEvents=0
-[ -f "$EVT" ] && numEvents=$((`awk '{print $1}' "$EVT" | uniq | wc -w`))
 if [ $numEvents -gt 0 ]; then
-cat<<EOF
+    cat<<EOF
 /* Scheduled Event function,
    EventLabel specifies which of the possible transformations to apply,
    dose can specify a scalar intensity for this transformation. */
@@ -103,16 +107,18 @@ int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose
 	double *p_=par;
 	if (!y_ || !par || EventLabel<0) return $((numEvents));
 EOF
-[ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
-printf "\tswitch(EventLabel){\n"
-for e in $eventNames ; do
+    [ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+    if [ -f "$EXP" ]; then
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    fi
+    printf "\tswitch(EventLabel){\n"
+    for e in `cut -f1 "$EVT" | sort | uniq` ; do
 	awk -v e=$e -f ${dir}/event.awk "$EVT"
-done
-printf "\t}\n"
-printf "\treturn GSL_SUCCESS;\n}\n\n"
+    done
+    printf "\t}\n"
+    printf "\treturn GSL_SUCCESS;\n}\n\n"
 fi
 #
 # Jacobian of the ODE
@@ -127,10 +133,13 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$CXP" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
+if [ -f "$EXP" ]; then
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" |  awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+fi
+printf "\tmemset(jac_,0,sizeof(double)*numStateVar*numStateVar); /* %i */\n" $((NV*NV))
 for j in `seq 1 $NV`; do
 	echo "/* column $j (df/dy_$((j-1))) */"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jac_Column_${j}.txt
+	awk -v n=$((NV)) -v j=$((j)) '$0 != 0 {print "\tjac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jac_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -148,10 +157,13 @@ EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-[ -f "$CXP" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CXP"
+if [ -f "$EXP" ]; then
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+fi
+printf "\tmemset(jacp_,0,sizeof(double)*numStateVar*numParam); /* %i */\n" $((NV*NP))
 for j in `seq 1 $NP`; do
 	echo "/* column $j (df/dp_$((j-1))) */"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jacp_Column_${j}.txt
+	awk -v n=$((NP)) -v j=$((j)) '$0 != 0 {print "\tjacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' $TMP/Jacp_Column_${j}.txt
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -194,9 +206,10 @@ awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
     perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
+printf "\tmemset(funcJac_,0,sizeof(double)*numFunc*numStateVar); /* %i */\n" $((NF*NV))
 for j in `seq 1 $NV`; do
 	echo "/* column $j (dF/dy_$((j-1))) */"
-	awk -v n=$((NV)) -v j=$((j)) '{print "\tfuncJac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJac_Column_${j}.txt"
+	awk -v n=$((NV)) -v j=$((j)) '$0 != 0 {print "\tfuncJac_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJac_Column_${j}.txt"
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -218,9 +231,10 @@ awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
     perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
+printf "\tmemset(funcJacp_,0,sizeof(double)*numFunc*numParam); /* %i */\n" $((NF*NP))
 for j in `seq 1 $NP`; do
 	echo "/* column $j (dF/dp_$((j-1))) */"
-	awk -v n=$((NP)) -v j=$((j)) '{print "\tfuncJacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJacp_Column_${j}.txt"
+	awk -v n=$((NP)) -v j=$((j)) '$0 != 0 {print "\tfuncJacp_[" (NR-1)*n + (j-1) "] = " $0 "; /* [" NR-1 ", " j-1 "] */"}' "$TMP/funcJacp_Column_${j}.txt"
 done
 echo "\treturn GSL_SUCCESS;"
 echo "}"
@@ -236,7 +250,8 @@ int ${MODEL}_default(double t, void *par)
 	if (!p_) return $((NP));
 EOF
 [ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-awk -F '\t' '{print "\tp_[_" $1 "] = " $2 ";"}' "$PAR"
+printf "\tmemset(p_,0,sizeof(double)*numParam);\n"
+awk -F '\t' '$2 != 0 {print "\tp_[_" $1 "] = " $2 ";"}' "$PAR"
 printf "\treturn GSL_SUCCESS;\n}\n"
 
 
@@ -248,12 +263,13 @@ cat<<EOF
 int ${MODEL}_init(double t, double *y_, void *par)
 {
 	double *p_=par;
-	if (!y_) return ${NV};
+	if (!y_) return $((NV));
 EOF
 [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 printf "\t/* the initial value of y may depend on the parameters. */\n"
-awk -F '\t' '{print "\ty_[_" $1 "] = " $2 ";"}' "$VAR"
+printf "\tmemset(y_,0,sizeof(double)*numStateVar);\n"
+awk -F '\t' '$2 != 0 {print "\ty_[_" $1 "] = " $2 ";"}' "$VAR"
 printf "\treturn GSL_SUCCESS;\n}\n"
 }
 

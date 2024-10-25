@@ -2,15 +2,12 @@
 
 ## substitute EXPRESSION_FILE MATH_FILE
 substitute () {
-	NE=$(( `wc -l < "$1"` ))
-	if [ -f "$1" -a $NE -gt 0 ]; then
-		for j in `seq $NE -1 1`; do
-			ExpressionName=`awk -F '\t' -v j=$((j)) 'NR==j {print $1}' "$1"`
-			ExpressionFormula=`awk -F '\t' -v j=$((j)) 'NR==j {print $2}' "$1"`
-			perl -p -e "s|\b${ExpressionName}\b|(${ExpressionFormula})|g;" "$2"
-		done
-	else
-		cat "$2"
-	fi
+    NE=$(( `wc -l < "$1"` ))
+    if [ $NE -gt 0 ]; then
+	awk -F '\t' '{print "s|\\b" $1 "\\b|(" $2 ")|g;"}' "$1" > "${TMP:-}/substitution_table.sed"
+	perl -p "${TMP:-.}/substitution_table.sed" "$2"
+    else
+	cat "$2"
+    fi
 }
 
