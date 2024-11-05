@@ -32,7 +32,7 @@ symbol_allocd(double d) /* the value of the new symbol */
   struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
 	n->type=symbol_number;
-  n->value=d;
+	n->value=d;
 	n->nargs=0;
 	return n;
 }
@@ -41,10 +41,10 @@ struct symbol* symbol_alloc_op(char op)
 {
   struct symbol *n=calloc(1,sizeof(struct symbol));
 	assert(n);
-	if (op=='\0' || !strchr("+-*/",op)){
+	if (op=='\0' || !strchr("+-*/<>=^",op)){
 		fprintf(stderr,"[%s] «%c» is not a known operatopr.\n",__func__,op);
 	}
-	assert(op!='\0' && strchr("+-*/",op));
+	assert(op!='\0' && strchr("+-*/<>=^",op));
 	n->type=symbol_operator;
 	n->op=op;
 	n->nargs=0;
@@ -73,7 +73,7 @@ symbol_alloc(char *s) /* a string used to initialize the symbol struct with a ty
 	p=s;
 	double d=strtod(s,&p);
 	if (s==p){
-		if (len==1 && c && strchr("+-*/",c)){
+		if (len==1 && c && strchr("+-*/<>=",c)){
 			n->type=symbol_operator;
 			n->op=c;
 			n->nargs=2;
@@ -191,7 +191,7 @@ is_double(
 	double v;
 	if(s && s->type==symbol_number){
 		v=s->value - y;
-	  z=((v<0?-v:v) < 1e-15 + 1e-15*(y<0?-y:y));
+		z=((v<0?-v:v) < (1e-15 + 1e-15*(y<0?-y:y)));
 	}
 	return z;
 }

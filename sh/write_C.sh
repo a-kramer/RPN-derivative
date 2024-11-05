@@ -107,18 +107,18 @@ int ${MODEL}_event(double t, double y_[], void *par, int EventLabel, double dose
 	double *p_=par;
 	if (!y_ || !par || EventLabel<0) return $((numEvents));
 EOF
-    [ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
+	[ -f "$CON" ] && awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
 	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
-    printf "\tswitch(EventLabel){\n"
-    for e in `cut -f1 "$EVT" | sort | uniq` ; do
+	fi
+	printf "\tswitch(EventLabel){\n"
+	for e in `cut -f1 "$EVT" | uniq` ; do
 	awk -v e=$e -f ${dir}/event.awk "$EVT"
-    done
-    printf "\t}\n"
-    printf "\treturn GSL_SUCCESS;\n}\n\n"
+	done
+	printf "\t}\n"
+	printf "\treturn GSL_SUCCESS;\n}\n\n"
 fi
 #
 # Jacobian of the ODE

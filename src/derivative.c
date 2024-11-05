@@ -95,6 +95,11 @@ struct ll* basic_op_derivative(struct symbol *s, struct ll *a, struct ll *b, con
 	struct ll *bb=NULL;
 	assert(s->type==symbol_operator);
 	switch (s->op){
+	case '=':
+	case '<':
+	case '>':
+		ll_append(&res,symbol_alloc("0"));
+		break;
 	case '+':
 		ll_cat(&res,derivative(a,x));
 		ll_cat(&res,derivative(b,x));
@@ -150,7 +155,7 @@ struct ll* derivative(struct ll *pn, const char *x){
 			ll_append(&res,symbol_alloc("0"));
 			free(s);
 			break;
-    case symbol_var:
+		case symbol_var:
 			if (strcmp(x,s->name)==0){
 				ll_append(&res,symbol_alloc("1"));
 			}else{

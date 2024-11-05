@@ -19,6 +19,14 @@ symbol (e.g.
 .B @exp
 ).
 
+This function half-understands the idea of step functions Theta(x): {
+0 if x<0; 1 if x>=0. The correct derivative of the step-function is
+delta(x): { INF at x==0; and 0 everywhere else. But, delta itself
+doesn't have a derivative, it cannot be curve plotted easily,
+numerical integrators shouldn't receive a delta in the ODE
+right-hand-side function. Generally, treating Theta(x) correctly is
+not useful to us. So, instead we allow inequality operators directly:
+<,>,= and their derivatives are always 0 everywhere.
 
 .SH EXAMPLES
 

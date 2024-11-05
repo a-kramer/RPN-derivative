@@ -6,6 +6,9 @@
 int priority(char op){
 	int p;
 	switch (op){
+	case '=':
+	case '<':
+	case '>': p=0; break; 
 	case '+': p=1; break;
 	case '-': p=1; break;
 	case '*': p=2; break;
@@ -72,7 +75,7 @@ struct ll* infix_to_rpn(char *infix)
 			k=word_length(s);
 			ll_push(&stack,memcpy(calloc(k+1,sizeof(char)),s,k));
 			s+=k;
-		} else if (s && *s!='\0' && strchr("^+-*/",*s)){
+		} else if (s && *s!='\0' && strchr("^+-*/<>=",*s)){
 			while (stack && (t=*((char*) stack->value))!='(' && priority(t)>=priority(*s)){
 				p=ll_pop(&stack);
 				ll_append(&rpn,symbol_alloc(p));
