@@ -246,8 +246,6 @@ Hessian () {
 	done
 }
 
-> "${TMP}/Jac_Column_${j}.txt" 2> "$TMP/error.log"
-
 Jacobian "$EXODE" "$VAR" "Jac_Column"
 Jacobian "$EXODE" "$PAR" "Jacp_Column"
 
