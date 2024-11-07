@@ -6,6 +6,6 @@
 # never useful in systems-biology modeling of the kind that we do.
 # So, we do this: d(a > 0)/da = 0.0 for all a (and so forth). 
 Derivative () {
-	perl -p -e 's/[=<>]+/*0.0*/g;' | perl -p "${dir:-.}/math.sed" | to_rpn | derivative $1 | simplify ${N:-20} | to_infix
+	awk -F '\t' '{print $2}' | perl -p -e 's/[=<>]+/*0.0*/g;' | perl -p "${dir:-.}/math.sed" | to_rpn | derivative $1 | simplify ${N:-20} | to_infix
 }
 
