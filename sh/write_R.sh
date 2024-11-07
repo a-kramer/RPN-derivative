@@ -58,10 +58,10 @@ RJacobian () {
 	[ "$lvar" -eq "$nfiles" ] || echo "Warning: There are $lvar independent variables but $nfiles prefixed-files when printing the jacobian '$outName' using the prefix '${jac_column_}'." 1>&2
 	n=${5:-$lfun}
 	m=${6:-$lvar}
-	printf "\t%s <- matrix(NA,%i,%i)\n" "${outName}" $((n)) $((m))
+	printf "\t%s <- matrix(0.0,%i,%i)\n" "${outName}" $((n)) $((m))
 	for j in `seq 1 $((m))`; do
 		echo "# column $j"
-		awk -F '	' -v name="$outName" -v j=$((j)) '{print "\t" name "[" NR "," j "] <- " $0 }' "${jac_column_}${j}.txt"
+		awk -F '	' -v name="$outName" -v j=$((j)) '$0!=0 {print "\t" name "[" NR "," j "] <- " $0 }' "${jac_column_}${j}.txt"
 	done
 	RCharVector "rownames($outName)" "$rows"
 	RCharVector "colnames($outName)" "$cols"
@@ -83,7 +83,7 @@ awk '{print "\t" $1 " <- parameters[" NR "]"}' "$PAR"
 awk '{print "\t" $1 " <- state[" NR "]"}' "$VAR"
 [ -f "$EXP" ] && awk -F '	' '{print "\t" $1 " <- " $2}' "$EXP"
 printf "\tf_<-vector(mode='numeric',len=%i)\n" $((NV))
-awk -F '	' '{print "\tf_[" NR "] <- " $0 }' "$ODE"
+awk -F '	' '{print "\tf_[" NR "] <- " $2 "# " $1 }' "$ODE"
 RCharVector "names(f_)" "$VAR"
 echo "## for some weird reason deSolve wants this to be a list:"
 echo "\treturn(list(f_))"
