@@ -8,7 +8,7 @@ $$
 \begin{align}
 \dot y &= f(t,y;p)\,\\
  y(t_0) &= y_0\,\\
- F(t_k,y(t_k);p) - z_k &\sim \mathcal{N}(0,\Sigma_k)\, 
+ F(t_k,y(t_k);p) - z_k &\sim \mathcal{N}(0,\Sigma_k)\,
 \end{align}
 $$
 
@@ -83,11 +83,11 @@ OPTIONS with default values
                        --hessian|-H  also write all possible Hessians (ODE-f or output function F, with respect to state variables or parameters)
                    --simplify|-N 10  simplify derivative results 10 times
          --temp|-t /dev/shm/ode_gen  where to write intermediate files (an empty directory).
-               --no-clean|--inspect  keep intermediate files to check for errors.
+               --no-clean|--inspect  keep intermediate files to check for errors (default is to clear them).
                         --maxima|-M  use maxima to calculate derivatives
-					(default is RPN derivative (this package)).
+                                     (default is RPN derivative (this package)).
                          --yacas|-Y  use yacas to calculate derivatives
-					(default is RPN derivative (this package)).
+                                     (default is RPN derivative (this package)).
 EXAMPLE
 =======
 
@@ -100,11 +100,11 @@ EXAMPLE
 
 Instead of the derivative function supplied here, it is possible to use `maxima` or `yacas`. The switches are:
 
-|option|backend choice|
-|-----:|:-----:|
-|`--maxima` `-M`|[maxima](https://maxima.sourceforge.io/)|
-|`--yacas` `-Y`|[yacas](http://www.yacas.org/)|
-|default|`derivative`|
+|          option | backend choice                           |
+|----------------:|:----------------------------------------:|
+| `--maxima` `-M` | [maxima](https://maxima.sourceforge.io/) |
+|  `--yacas` `-Y` | [yacas](http://www.yacas.org/)           |
+|         default | `derivative`                             |
 
 ### NOTE
 
@@ -160,7 +160,28 @@ ODE.txt
 Parameters.txt
 Variables.txt
 ```
-The above is OK in terms of naming.
+
+The above is OK in terms of naming. These _are_ tab-separated files
+(`.tsv` is more correct), but on some systems it is easier to create/open
+`txt` files because they open the default text editor while files ending
+in tsv do not.
+
+Generally, math can contain equalities and inequalities, e.g. `(a<b)`
+or `(a==b)`, for this reason, we cannot use `=` as a column
+separator. The derivatives of such statements are considered as `0`,
+and integration should not go past the point where these relationships
+flip. The integrator should stop there and re-start.
+
+*Note on readability*: The goal was to parse these files with standard
+posix tools, and a line like `Ca = a*exp(-t)*(t>0) + b*(t<=0)` is
+easier to parse if the assignment `=` is replaced by a tab, and then
+do `awk -F '\t' '{print $2} file.txt | to_rpn | derivative a'` to
+process such lines. We may in the future make it possible to use an
+initial `=` and do something like:
+
+```sh
+sed -E 's/^\([a-zA-Z][a-zA-Z0-9_]*\)[ ]*=[ ]*/\1\t/'
+```
 
 ### Constants (optional)
 
@@ -173,14 +194,14 @@ line.
 [Example](../examples):
 
 ```tsv
-inv_tau	1000
+N_Avogadro	6.022e+23
 ```
 
 ### Parameters
 
 A file named `Parameters.txt` (or `Parameter.txt`, see above regarding flexibility).
 
-A column of parameter names and default values, separated by tabs or spaces, one per line.
+A column of parameter names and default values, separated by tabs, one per line.
 
 The values will be used to write the function
 `${ModelName}_default(double t, void *par)`, it will fill the vector
@@ -246,7 +267,7 @@ The contents of the file are: `name \t formula`, one expression per line (tab se
 Expression.txt:
 
 ```tsv Example.txt
-Activation	1/(1-exp(-(t-t_on)*inv_tau))
+Activation	1.0/(1.0-exp(-(t-t_on)*inv_tau))
 ```
 
 ### Functions (optional)
@@ -287,7 +308,7 @@ int DemoModel_func(double t, const double y_[], double *func_, void *par)
 	double AB=y_[3];
 	double AC=y_[4];
 	double ABC=y_[5];
-	double Activation=1/(1-exp(-(t-t_on)*inv_tau));
+	double Activation=1.0/(1.0-exp(-(t-t_on)*inv_tau));
 	func_[0] = A+AB+AC+ABC;
 	func_[1] = B+AB+ABC;
 	func_[2] = C+AC+ABC;
@@ -356,9 +377,9 @@ cannot match word boundaries. BSD and MACOS use `[[:<:]]` and
 has no equivalent).
 
 It would be nice if MACOS had gsed (GNU sed) reliably, so that we
-could just replace all calls to sed with gsed or gnu-sed. But, we
-cannot assume this.
+could just replace all calls to `sed` with `gsed` or `gnu-sed` (or
+whatever). But, we cannot assume this.
 
 Instead, we opt to use `perl -p` as a replacement for `sed -[Er]`, as
-perl is part of coreutils and has `\b` on all unix systems that we
-have tested on so far.
+perl is part of coreutils and has `\b` on all unix-like systems that we
+have tested on so far. We don't use perl other than this workaround.
