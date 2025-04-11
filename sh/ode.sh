@@ -250,10 +250,10 @@ Jacobian "$EXODE" "$VAR" "Jac_Column"
 Jacobian "$EXODE" "$PAR" "Jacp_Column"
 
 # Hessians?
-if [ "$HESS" ]; then 
+if [ "$HESS" ]; then
 	Hessian "$EXODE" "$PAR" "parHessian"
 	Hessian "$EXODE" "$VAR" "Hessian"
-	Hessian "$EXFUN" "$PAR" "funcParHessian"	
+	Hessian "$EXFUN" "$PAR" "funcParHessian"
 	Hessian "$EXFUN" "$VAR" "funcHessian"
 fi
 
