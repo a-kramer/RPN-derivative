@@ -70,9 +70,7 @@ void to_latex(struct ll *pn, int paren){
 	struct symbol *next;
 	struct ll *a, *b;
 	int p;
-	int d;
 	if (pn) {
-		d=depth(pn);
 		s=ll_pop(&pn);
 		if (paren) printf("(");
 		switch (s->type){

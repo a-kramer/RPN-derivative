@@ -49,9 +49,9 @@ EOF
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
-    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
-perl -p "${dir:-.}/maxima-to-C.sed" "$ODE" | awk -F '\t' '{print "\tf_[_" $1 "] = " $2 "; /*", $1, "*/"}'
+perl -p "${dir:-.}/maxima-to-C.sed" "$ODE" | replace_powers | awk -F '\t' '{print "\tf_[_" $1 "] = " $2 "; /*", $1, "*/"}'
 echo "\treturn GSL_SUCCESS;"
 echo "}"
 
@@ -66,7 +66,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' 
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};' 
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -77,7 +77,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";"}' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};'
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' 'BEGIN {j=0};  $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {print "	// " $2; gsub(/-[^-]*$/,"",$2); print "\t" "flux[" j++ "] = " $2 ";"; next;}; {print "\tdouble " $1 " = " $2 ";"};'
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -88,7 +88,7 @@ if [ $((nFlux)) -gt 0 ]; then
 	[ -f "$CON" ] && awk '{print "\tdouble " $1 " = " $2 ";" }' "$CON"
 	awk '{print "\tdouble " $1 " = p_[" NR-1 "];"}' "$PAR"
 	awk '{print "\tdouble " $1 " = y_[" NR-1 "];"}' "$VAR"
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};'
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' 'BEGIN {j=0}; $1 ~ /[Rr]eaction(Flux)?_[0-9]*/ {if ($2 ~ /-/) {bf=gensub(/^[^-]*-([^-]+)$/,"\\1","g",$2)} else {bf = "0.0"}; print "\t" "flux[" j++ "] = " bf "; // " $2; next;}; {print "\tdouble " $1 " = " $2 ";"};'
 	printf "\treturn GSL_SUCCESS;\n"
 	echo "}"
 	echo
@@ -111,7 +111,7 @@ EOF
 	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 	if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 	fi
 	printf "\tswitch(EventLabel){\n"
 	for e in `cut -f1 "$EVT" | uniq` ; do
@@ -134,7 +134,7 @@ EOF
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
-    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" |  awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers |  awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
 printf "\tmemset(jac_,0,sizeof(double)*numStateVar*numStateVar); /* %i */\n" $((NV*NV))
 for j in `seq 1 $NV`; do
@@ -158,7 +158,7 @@ EOF
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
-    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
 printf "\tmemset(jacp_,0,sizeof(double)*numStateVar*numParam); /* %i */\n" $((NV*NP))
 for j in `seq 1 $NP`; do
@@ -179,15 +179,15 @@ int ${MODEL}_func(double t, const double y_[], double *func_, void *par)
 	double *p_=par;
 	if (!y_ || !func_) return $((NF));
 EOF
-    [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
-    perl -p "${dir:-.}/maxima-to-C.sed" "$FUN" | awk -F '\t' '{print "\tfunc_[_" $1 "] = " $2 "; /* " $1 " */"}'
-    echo "\treturn GSL_SUCCESS;"
-    echo "}"
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
+		perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	fi
+	perl -p "${dir:-.}/maxima-to-C.sed" "$FUN" | replace_powers | awk -F '\t' '{print "\tfunc_[_" $1 "] = " $2 "; /* " $1 " */"}'
+	echo "\treturn GSL_SUCCESS;"
+	echo "}"
 fi
 
 #
@@ -204,7 +204,7 @@ EOF
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
-    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
 printf "\tmemset(funcJac_,0,sizeof(double)*numFunc*numStateVar); /* %i */\n" $((NF*NV))
 for j in `seq 1 $NV`; do
@@ -229,7 +229,7 @@ EOF
 awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
 awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
 if [ -f "$EXP" ]; then
-    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+    perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
 fi
 printf "\tmemset(funcJacp_,0,sizeof(double)*numFunc*numParam); /* %i */\n" $((NF*NP))
 for j in `seq 1 $NP`; do
@@ -275,104 +275,104 @@ printf "\treturn GSL_SUCCESS;\n}\n"
 
 
 write_Hessian_in_C () {
-    #
-    # parameter Hessian of the output functions
-    #
-    cat<<EOF
+#
+# parameter Hessian of the output functions
+#
+cat<<EOF
 /* Function parameter Hessian d²F(t,y;p)[k]/dp[i]dp[j] */
 int ${MODEL}_funcParHessian(double t, const double y_[], double *funcParHessian_, void *par)
 {
 	double *p_=par;
 	if (!y_ || !funcParHessian_) return $((NP*NP*NF));
 EOF
-    [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
-    for i in `seq $NP`; do
-	for j in `seq $((i)) $NP` ; do
-	    echo "/* subset d^2 F(t,y;p)/dp[$((i-1))]dp[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
-	    awk -v n=$((NP)) -v j=$((j)) -v i=$((i)) '{print "\tfuncParHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = funcParHessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/funcParHessian_$((i))_$((j)).txt"
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
+	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	fi
+	for i in `seq $NP`; do
+		for j in `seq $((i)) $NP` ; do
+			echo "/* subset d^2 F(t,y;p)/dp[$((i-1))]dp[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
+			awk -v n=$((NP)) -v j=$((j)) -v i=$((i)) '{print "\tfuncParHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = funcParHessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/funcParHessian_$((i))_$((j)).txt"
+		done
 	done
-    done
-    echo "\treturn GSL_SUCCESS;"
-    echo "}"
+	echo "\treturn GSL_SUCCESS;"
+	echo "}"
 
-    #
-    # Hessian of the output functions
-    #
-    cat<<EOF
+#
+# Hessian of the output functions
+#
+cat<<EOF
 /* Function Hessian d²F(t,y;p)[k]/dy[i]dy[j] */
 int ${MODEL}_funcHessian(double t, const double y_[], double *funcHessian_, void *par)
 {
 	double *p_=par;
 	if (!y_ || !funcHessian_) return $((NV*NV*NF));
 EOF
-    [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
-    for i in `seq $NV`; do
-	for j in `seq $((i)) $NV` ; do
-	    echo "/* subset d^2 F(t,y;p)/dy[$((i-1))]dy[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
-	    awk -v n=$((NV)) -v j=$((j)) -v i=$((i)) '{print "\tfuncHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = funcHessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/funcHessian_$((i))_$((j)).txt"
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
+		perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	fi
+	for i in `seq $NV`; do
+		for j in `seq $((i)) $NV` ; do
+			echo "/* subset d^2 F(t,y;p)/dy[$((i-1))]dy[$((j-1))], F: (R,R^$NV;R^$NP) -> R^$NF */"
+			awk -v n=$((NV)) -v j=$((j)) -v i=$((i)) '{print "\tfuncHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = funcHessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/funcHessian_$((i))_$((j)).txt"
+		done
 	done
-    done
-    echo "\treturn GSL_SUCCESS;"
-    echo "}"
+	echo "\treturn GSL_SUCCESS;"
+	echo "}"
 
-    #
-    # Hessian of the ODE
-    #
-    cat<<EOF
+
+# Hessian of the ODE
+#
+cat<<EOF
 /* Hessian d²f(t,y;p)[k]/dy[i]dy[j] */
 int ${MODEL}_Hessian(double t, const double y_[], double *Hessian_, void *par)
 {
 	double *p_=par;
 	if (!y_ || !Hessian_) return $((NV*NV*NV));
 EOF
-    [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
+		perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	fi
 
-    for i in `seq $NV`; do
-	for j in `seq $((i)) $NV` ; do
-	    echo "/* subset d^2 f(t,y;p)/dy[$((i-1))]dy[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
-	    awk -v n=$((NV)) -v j=$((j)) -v i=$((i)) '{print "\tHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = Hessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/Hessian_$((i))_$((j)).txt"
+	for i in `seq $NV`; do
+		for j in `seq $((i)) $NV` ; do
+			echo "/* subset d^2 f(t,y;p)/dy[$((i-1))]dy[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
+			awk -v n=$((NV)) -v j=$((j)) -v i=$((i)) '{print "\tHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = Hessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/Hessian_$((i))_$((j)).txt"
+		done
 	done
-    done
-    echo "\treturn GSL_SUCCESS;"
-    echo "}"
+	echo "\treturn GSL_SUCCESS;"
+	echo "}"
 
-    #
-    # parameter Hessian of the ODE
-    #
-    cat<<EOF
+#
+# parameter Hessian of the ODE
+#
+cat<<EOF
 /* Parameter Hessian d²f(t,y;p)[k]/dp[i]dp[j] */
 int ${MODEL}_parHessian(double t, const double y_[], double *parHessian_, void *par)
 {
 	double *p_=par;
 	if (!y_ || !parHessian_) return $((NP*NP*NV));
 EOF
-    [ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
-    awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
-    awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
-    if [ -f "$EXP" ]; then
-	perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
-    fi
-    for i in `seq $NP`; do
-	for j in `seq $((i)) $NP` ; do
-	    echo "/* subset d^2 f(t,y;p)/dp[$((i-1))]dp[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
-	    awk -v n=$((NP)) -v j=$((j)) -v i=$((i)) '{print "\tHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = Hessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/parHessian_$((i))_$((j)).txt"
+	[ -f "$CON" ] && awk '{print "\tdouble " $1 "=" $2 ";"}' "$CON"
+	awk -F '\t' '{print "\tdouble " $1 "=p_[" NR-1 "];"}' "$PAR"
+	awk -F '\t' '{print "\tdouble " $1 "=y_[" NR-1 "];"}' "$VAR"
+	if [ -f "$EXP" ]; then
+		perl -p "${dir:-.}/maxima-to-C.sed" "$EXP" | replace_powers | awk -F '\t' '{print "\tdouble " $1 "=" $2 ";"}'
+	fi
+	for i in `seq $NP`; do
+		for j in `seq $((i)) $NP` ; do
+			echo "/* subset d^2 f(t,y;p)/dp[$((i-1))]dp[$((j-1))], f: (R,R^$NV;R^$NP) -> R^$NV */"
+			awk -v n=$((NP)) -v j=$((j)) -v i=$((i)) '{print "\tHessian_[" (NR-1)*n*n + (i-1)*n + (j-1) "] = Hessian_[" (NR-1)*n*n + (j-1)*n + (i-1) "] = " $0 "; /* [" i-1 ", " j-1 ", " NR-1 "] and [" j-1 ", " i-1 ", " NR-1 "] */"}' "$TMP/parHessian_$((i))_$((j)).txt"
+		done
 	done
-    done
-    echo "\treturn GSL_SUCCESS;"
-    echo "}"
+	echo "\treturn GSL_SUCCESS;"
+	echo "}"
 }
