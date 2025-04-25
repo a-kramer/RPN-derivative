@@ -13,7 +13,11 @@ instead.
 
 There are many software packages that can do this and much more
 (computer algebra systems). Here is a [list of
-alternatives](alternatives.md).
+alternatives](alternatives.md). Each alternative comes with their own
+disadvantages.
+
+This toolset is a safety measure, in case the others become
+unavailable for some reason.
 
 ## Summary
 
@@ -41,12 +45,17 @@ will be in output line *n*). There may be output on `stderr`, so redirection is 
 
 Although it is of course possible to use `derivative` and `simplify`
 by themselves, you can also use `to_rpn` to convert more conventional
-math to rpn notation and `to_infix` to translate the result back. All standard math functions must have an `@` to mark them as functions: `-1 x * @exp` is equivalent to `exp(-x)` in normal notation. This may change in the future.
+math to rpn notation and `to_infix` to translate the result back. All
+standard math functions must have an `@` to mark them as functions:
+`-1 x * @exp` is equivalent to `exp(-x)` in normal notation. This may
+change in the future.
 
 ## Compiling
 
-Both [gcc](https://gcc.gnu.org/) and [tcc](https://repo.or.cz/tinycc.git)
-will work and have been used to compile these sources. In the root directory of this repository (parent of src):
+Both [gcc](https://gcc.gnu.org/) and
+[tcc](https://repo.or.cz/tinycc.git) will work and have been used to
+compile these sources. In the root directory of this repository
+(parent of src):
 
 ```sh
 $ mkdir bin
@@ -107,8 +116,10 @@ Polish notation:
 $ bin/to_rpn < math.txt
 ```
 
-This program takes no command line arguments.
-If the math expressions come in larger numbers (or from a pipe), from a source that just uses function names without any `@` signs, it is probably convenient to do sth like this on the input:
+This program takes no command line arguments.  If the math expressions
+come in larger numbers (or from a pipe), from a source that just uses
+function names without any `@` signs, it is probably convenient to do
+sth like this on the input:
 
 ```sh
 sed -r  's/(exp|log|sin|cos|tan)/@\1/g' original_input.txt | to_rpn
@@ -134,8 +145,7 @@ that underscore thing (`dc -e '-1 1 + p'` prints `2` and also `dc:
 stack empty` to `stderr`).
 
 The output consists of space separated rpn expressions, so no mixups
-of this sort are likely to happen downstream (apart from negated
-variables, the doesn't work in rpn either).
+of this sort are likely to happen downstream.
 
 ### derivative
 
@@ -188,9 +198,10 @@ x a b + * a b + a b + * /
 
 which is `x*(a+b)/((a+b)*(a+b))` in infix notation (so
 `x/(a+b)`). This is almost right (technically correct, but
-unnecessary). This fraction is reduced correctly, now ~Currently, no amount of simplifying will reduce the
-fraction unless it reduces to 1;~ This is still true: `simplify` doesn't really know math,
-it merely tries some simple pattern recognition.
+unnecessary). This fraction is reduced correctly, now ~Currently, no
+amount of simplifying will reduce the fraction unless it reduces to
+1;~ This is still true: `simplify` doesn't really know math, it merely
+tries some simple pattern recognition.
 
 If you encounter a specific case where you automate code creation for
 a computational task and it always produces a difficult type of
@@ -248,7 +259,14 @@ $ echo "4*y^3+x" | replace_powers
 4*gsl_pow_3(y)+x
 ```
 
-Which will now work in C.
+Which will now work in C. The pipe version of the above is something like this:
+
+```sh
+$ echo "display2d:false$ linel:1000$ diff(x^y,y,1);" | maxima --very-quiet | tail -n 1 | replace_powers
+pow(x, y)*log(x)
+```
+
+(maxima always produces a blank line, even when it is very quiet).
 
 ### rpn to infix
 
