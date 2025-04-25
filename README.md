@@ -86,10 +86,16 @@ If you prefer a different location, edit the `PREFIX` variable in
 ## Usage
 
 The programs in this repository are meant to be used via pipes:
+
 ```bash
 [...] | to_rpn | derivative x | simplify
 ```
-They all read _n_ lines from standard input (stdin) and write _n_ lines to standard output (stdout) - unless something goes wrong.
+
+They all read _n_ lines from standard input (stdin) and write _n_
+lines to standard output (stdout) - unless something goes
+wrong. Errors should be printed to stderr. If the number of lines in
+`stdin` is different from the number of lines in `stdout`, this is
+an error (bug).
 
 ### Conversion to RPN
 
@@ -103,6 +109,7 @@ $ bin/to_rpn < math.txt
 
 This program takes no command line arguments.
 If the math expressions come in larger numbers (or from a pipe), from a source that just uses function names without any `@` signs, it is probably convenient to do sth like this on the input:
+
 ```sh
 sed -r  's/(exp|log|sin|cos|tan)/@\1/g' original_input.txt | to_rpn
 ```
@@ -117,14 +124,18 @@ creates an ambiguity with the unary minus (and plus). Consequently,
 some strings are not interpreted right: `1-2` is read as `+1` and `-2`
 (a sequence of two numbers), but `1 - 2` is understood correctly as
 the operation _minus(1,2)_, `a-b` works perfectly fine because `b` is
-not a valid number. The bad: unary minus does not work at all for variables `-a+1`.
+not a valid decimal number. The bad: unary minus does not work at all
+for variables `-a+1`.  These rules are simple and will not change,
+human math parsing rules are complicated.
 
 The `dc` program resolves this ambiguity by using the underscore to
-denote negative numbers: `dc -e '_1 1 + p'` prints 0; but, we don't do that
-underscore thing.
+denote negative numbers: `dc -e '_1 1 + p'` prints 0; but, we don't do
+that underscore thing (`dc -e '-1 1 + p'` prints `2` and also `dc:
+stack empty` to `stderr`).
 
 The output consists of space separated rpn expressions, so no mixups
-of this sort are likely to happen downstream (apart from negated variables, the doesn't work in rpn either).
+of this sort are likely to happen downstream (apart from negated
+variables, the doesn't work in rpn either).
 
 ### derivative
 
@@ -206,6 +217,38 @@ x y 2 + * x y * +
 ```
 
 which is `x*(y+2) + x*y` (OK).
+
+### Replace Powers
+
+This package includes a helper program that can be used to convert the
+printed results into C code, even if the math expressions cam from
+another source:
+
+```sh
+$ echo "x y * y 4 ^ +" | derivative y | simplify 2 | to_infix
+(x+(pow(y,4)*(4/y)))
+```
+
+But, what if we had this expression directly from another source (e.g. maxima):
+
+```sh
+$ maxima
+
+Maxima 5.46.0 https://maxima.sourceforge.io
+using Lisp GNU Common Lisp (GCL) GCL 2.6.14 git tag Version_2_6_15pre7
+Distributed under the GNU Public License. See the file COPYING.
+Dedicated to the memory of William Schelter.
+The function bug_report() provides bug reporting information.
+(%i1) display2d:false$ diff(x*y + y^4,y,1);
+
+(%o2) 4*y^3+x
+(%i3) quit()$
+
+$ echo "4*y^3+x" | replace_powers
+4*gsl_pow_3(y)+x
+```
+
+Which will now work in C.
 
 ### rpn to infix
 
