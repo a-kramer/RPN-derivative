@@ -172,7 +172,7 @@ EOF
 fi
 
 ## make a model using sh/ode.sh
-model=CaSpike
+model=DemoModel
 LIBS=`pkg-config --libs gsl`
 sh/ode.sh -C examples/${model}.tar.gz > examples/${model}_gvf.c && gcc -shared -fPIC -o ${model}.so examples/${model}_gvf.c $LIBS
 ec=$?

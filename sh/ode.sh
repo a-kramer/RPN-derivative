@@ -83,7 +83,12 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-BM=`basename "${MODEL}"`
+if [ -f "$MODEL" ]; then
+	BM=$(basename "${MODEL}")
+else
+	echo "«$MODEL» does not exist."
+	exit 2;
+fi
 
 #Default Names
 CON="Constants.txt"

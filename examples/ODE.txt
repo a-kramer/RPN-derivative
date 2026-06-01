@@ -1,6 +1,6 @@
--ReactionFlux0-ReactionFlux1
--ReactionFlux0-ReactionFlux3
--ReactionFlux1-ReactionFlux2
-+ReactionFlux0-ReactionFlux2
-+ReactionFlux1-ReactionFlux3
-+ReactionFlux2+ReactionFlux3
+R0	-ReactionFlux0-ReactionFlux1
+R1	-ReactionFlux0-ReactionFlux3
+R2	-ReactionFlux1-ReactionFlux2
+R3	+ReactionFlux0-ReactionFlux2
+R4	+ReactionFlux1-ReactionFlux3
+R5	+ReactionFlux2+ReactionFlux3

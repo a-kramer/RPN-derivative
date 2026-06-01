@@ -12,11 +12,13 @@ cat<<EOF
 EOF
 
 
+reacEnums="$(cut -f1 "$ODE" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ',')"
+printf "enum reaction { %s }; /* reaction indexes  */\n" "$reacEnums numReactions"
 
-stateEnums="`cut -f1 "$VAR" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ','`"
+stateEnums="$(cut -f1 "$VAR" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ',')"
 printf "enum stateVariable { %s }; /* state variable indexes  */\n" "$stateEnums numStateVar"
 
-paramEnums="`cut -f1 "$PAR" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ','`"
+paramEnums="$(cut -f1 "$PAR" | uniq | perl -pe 's/\b(\w)/_\1/g' | tr '\n' ',')"
 printf "enum param { %s }; /* parameter indexes  */\n" "$paramEnums numParam"
 
 numEvents=0
